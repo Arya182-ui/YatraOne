@@ -1,6 +1,6 @@
 // BusTrackingDashboard.tsx
 // New dashboard layout as per requirements
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
@@ -21,6 +21,7 @@ import LiveBusMap from './LiveBusMap';
 import MobileBusMap from './MobileBusMap';
 import EtaCard from './EtaCard';
 import { useEtaCardData } from './useEtaCardData';
+import { useBusLocationWebSocket } from '../../lib/useBusLocationWebSocket';
 
 async function reverseGeocode(lat: number, lon: number) {
   if (!lat || !lon) return null;
@@ -112,24 +113,42 @@ const BusTrackingDashboard: React.FC = () => {
   // --- ETA Card Data for mobile ---
   const etaCardData = useEtaCardData(selectedBus, selectedRoute);
 
-  // WebSocket for live bus location
-  const ws = useRef<WebSocket | null>(null);
+
+  // Use reusable hook for live bus location
+  const wsUrlBase = window.location.origin; // or set your backend base URL
+  const liveBusLocation = useBusLocationWebSocket(selectedBusId, wsUrlBase);
+
+  // --- Offline cache logic ---
+  const CACHE_KEY = `bustracking_last_location_${selectedBusId}`;
+  // Save to cache whenever liveBusLocation updates (and online)
   useEffect(() => {
-    if (!selectedBusId) return;
-    ws.current = new WebSocket(`ws://localhost:8000/ws/bus-location/${selectedBusId}`);
+    if (navigator.onLine && liveBusLocation && liveBusLocation.latitude && liveBusLocation.longitude) {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(liveBusLocation));
+    }
+  }, [liveBusLocation, selectedBusId]);
 
-    ws.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      // Update your map marker or state here
-      console.log("Location update:", data);
-      // Optionally, you can fetch the updated bus data and update the state
-      // busAPI.getBuses().then(updatedBuses => setBuses(updatedBuses));
-    };
-
+  // If offline, load from cache
+  const [offlineLocation, setOfflineLocation] = useState<any>(null);
+  useEffect(() => {
+    function handleOffline() {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) setOfflineLocation(JSON.parse(cached));
+      } catch {}
+    }
+    function handleOnline() {
+      setOfflineLocation(null);
+    }
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    if (!navigator.onLine) handleOffline();
     return () => {
-      ws.current && ws.current.close();
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
     };
   }, [selectedBusId]);
+  // You can use liveBusLocation to update map marker, show in UI, etc.
+  // Example: console.log('Live location:', liveBusLocation);
 
 
   return (

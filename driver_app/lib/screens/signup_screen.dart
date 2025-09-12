@@ -1,6 +1,7 @@
-
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -16,10 +17,65 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
   bool _loading = false;
+  bool _otpSent = false;
+  bool _otpVerified = false;
   String? _error;
+  String? _otpError;
+
+  Future<void> _sendOtp() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return;
+    final response = await http.post(
+      Uri.parse('https://yatraone-backend.onrender.com/api/auth/send-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'purpose': 'register',
+        }),
+    );
+    if (response.statusCode == 200) {
+      setState(() {
+        _otpSent = true;
+        _otpError = null;
+      });
+    } else {
+      setState(() {
+        _otpError = 'Failed to send OTP';
+      });
+    }
+  }
+
+  Future<void> _verifyOtp() async {
+    final email = _emailController.text.trim();
+    final otp = _otpController.text.trim();
+    if (email.isEmpty || otp.isEmpty) return;
+    final response = await http.post(
+      Uri.parse('https://yatraone-backend.onrender.com/api/auth/verify-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'otp': otp , 'purpose': 'register'}),
+    );
+    if (response.statusCode == 200) {
+      setState(() {
+        _otpVerified = true;
+        _otpError = null;
+      });
+    } else {
+      setState(() {
+        _otpVerified = false;
+        _otpError = 'Invalid OTP';
+      });
+    }
+  }
 
   Future<void> _signup() async {
+    if (!_otpVerified) {
+      setState(() {
+        _error = 'Please verify OTP before signing up.';
+      });
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     setState(() { _loading = true; _error = null; });
     bool shouldUpdate = true;
@@ -69,33 +125,41 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Driver Signup')),
+      appBar: AppBar(
+        title: Text('Driver Signup', style: Theme.of(context).textTheme.headlineMedium),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(Icons.person_add, size: 48, color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(height: 16),
-                      Text('Create Driver Account', style: Theme.of(context).textTheme.headlineMedium),
-                      const SizedBox(height: 24),
+                      Icon(Icons.person_add, size: 56, color: Theme.of(context).colorScheme.primary, semanticLabel: 'Signup Icon'),
+                      const SizedBox(height: 20),
+                      Text('Create Driver Account', style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
+                      const SizedBox(height: 28),
                       Row(
                         children: [
                           Expanded(
                             child: TextFormField(
                               controller: _firstNameController,
-                              decoration: const InputDecoration(
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              decoration: InputDecoration(
                                 labelText: 'First Name',
-                                prefixIcon: Icon(Icons.person),
+                                prefixIcon: const Icon(Icons.person_outline),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                                filled: true,
                               ),
                               validator: (v) => v == null || v.isEmpty ? 'Enter first name' : null,
                             ),
@@ -104,8 +168,11 @@ class _SignupScreenState extends State<SignupScreen> {
                           Expanded(
                             child: TextFormField(
                               controller: _lastNameController,
-                              decoration: const InputDecoration(
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              decoration: InputDecoration(
                                 labelText: 'Last Name',
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                                filled: true,
                               ),
                               validator: (v) => v == null || v.isEmpty ? 'Enter last name' : null,
                             ),
@@ -115,61 +182,126 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _emailController,
-                        decoration: const InputDecoration(
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        decoration: InputDecoration(
                           labelText: 'Email',
-                          prefixIcon: Icon(Icons.email),
-                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                          filled: true,
                         ),
                         validator: (v) => v == null || v.isEmpty ? 'Enter email' : null,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _phoneController,
-                        decoration: const InputDecoration(
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        decoration: InputDecoration(
                           labelText: 'Phone',
-                          prefixIcon: Icon(Icons.phone),
-                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.phone_outlined),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                          filled: true,
                         ),
                         validator: (v) => v == null || v.isEmpty ? 'Enter phone' : null,
+                        keyboardType: TextInputType.phone,
+                        autofillHints: const [AutofillHints.telephoneNumber],
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        decoration: InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock),
-                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                          filled: true,
                         ),
                         obscureText: true,
                         validator: (v) => v == null || v.isEmpty ? 'Enter password' : null,
+                        autofillHints: const [AutofillHints.newPassword],
                       ),
+                      const SizedBox(height: 16),
+                      if (!_otpSent)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _sendOtp,
+                            child: const Text('Send OTP'),
+                            style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
+                              minimumSize: WidgetStateProperty.all(const Size.fromHeight(48)),
+                            ),
+                          ),
+                        ),
+                      if (_otpSent && !_otpVerified) ...[
+                        TextFormField(
+                          controller: _otpController,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                          decoration: InputDecoration(
+                            labelText: 'Enter OTP',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                            filled: true,
+                          ),
+                          validator: (v) => v == null || v.isEmpty ? 'Enter OTP' : null,
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _verifyOtp,
+                            child: const Text('Verify OTP'),
+                            style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
+                              minimumSize: WidgetStateProperty.all(const Size.fromHeight(48)),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (_otpVerified)
+                        const Text('OTP Verified!', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                      if (_otpError != null)
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: Text(_otpError!, key: ValueKey(_otpError), style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600)),
+                        ),
                       const SizedBox(height: 20),
                       if (_error != null) ...[
-                        Text(_error!, style: const TextStyle(color: Colors.red)),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: Text(_error!, key: ValueKey(_error), style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600)),
+                        ),
                         const SizedBox(height: 10),
                       ],
                       _loading
-                          ? const CircularProgressIndicator()
+                          ? const Center(child: CircularProgressIndicator())
                           : SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 icon: const Icon(Icons.person_add),
                                 label: const Text('Signup'),
-                                onPressed: () async {
-                                  await _signup();
-                                  if (!mounted) return;
-                                  if (_error == null && !_loading) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Signup successful! Pending admin approval.')),
-                                    );
-                                  }
-                                },
-                                style: Theme.of(context).elevatedButtonTheme.style,
+                                onPressed: _otpVerified
+                                    ? () async {
+                                        await _signup();
+                                        if (!mounted) return;
+                                        if (_error == null && !_loading) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Signup successful! Pending admin approval.')),
+                                          );
+                                        }
+                                      }
+                                    : null,
+                                style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
+                                  minimumSize: WidgetStateProperty.all(const Size.fromHeight(48)),
+                                ),
                               ),
                             ),
                       TextButton(
-                        onPressed: () => Navigator.pushNamed(context, '/login'),
+                        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
                         child: const Text('Already have an account? Login'),
+                        style: TextButton.styleFrom(
+                          textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ],
                   ),

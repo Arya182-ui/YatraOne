@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle,Trash2, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { adminSOSAPI } from '../../lib/api';
-import type { SOSReport, IncidentReport } from '../../types';
+import { adminSOSAPI, busLocationAPI } from '../../lib/api';
+import type { SOSReport, IncidentReport, Bus as BusType } from '../../types';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -31,12 +31,18 @@ const AdminDashboard: React.FC = () => {
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [feedbackStats, setFeedbackStats] = useState<{pending: number, resolved: number, percent_resolved: number, total: number} | null>(null);
   const [loading, setLoading] = useState(true);
+  const [buses, setBuses] = useState<BusType[]>([]);
 
   // SOS/Incident state
   const [sosReports, setSOSReports] = useState<SOSReport[]>([]);
   const [incidentReports, setIncidentReports] = useState<IncidentReport[]>([]);
   const [sosLoading, setSOSLoading] = useState(false);
   const [incidentLoading, setIncidentLoading] = useState(false);
+
+  // Timetable upload state
+  const [ttFile, setTTFile] = useState<File | null>(null);
+  const [ttUploading, setTTUploading] = useState(false);
+  const [ttUrl, setTTUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -54,6 +60,18 @@ const AdminDashboard: React.FC = () => {
       }
     };
     fetchAnalytics();
+  }, []);
+
+  useEffect(() => {
+    const fetchBusLocations = async () => {
+      try {
+        const busData = await busLocationAPI.getAllLocations();
+        setBuses(busData);
+      } catch (error) {
+        console.error('Error fetching bus locations:', error);
+      }
+    };
+    fetchBusLocations();
   }, []);
 
   // Fetch SOS/Incident reports
@@ -76,6 +94,11 @@ const AdminDashboard: React.FC = () => {
       }
     };
     fetchReports();
+  }, []);
+
+  // On mount, set timetable URL
+  useEffect(() => {
+    setTTUrl(timetableAPI.getTimetableUrl());
   }, []);
 
   const handleSOSStatus = async (id: string, status: string) => {
@@ -204,15 +227,7 @@ const AdminDashboard: React.FC = () => {
     },
   ];
 
-  // Timetable upload state
-  const [ttFile, setTTFile] = useState<File | null>(null);
-  const [ttUploading, setTTUploading] = useState(false);
-  const [ttUrl, setTTUrl] = useState<string | null>(null);
-
-  // On mount, set timetable URL
-  useEffect(() => {
-    setTTUrl(timetableAPI.getTimetableUrl());
-  }, []);
+  // ...existing code...
 
   const handleTTUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -232,32 +247,6 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
-      {/* Timetable Upload Section */}
-      <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow border border-blue-200 dark:border-blue-700 p-6 mb-10 mt-8">
-        <h2 className="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300">Upload Bus Timetable PDF</h2>
-        <form onSubmit={handleTTUpload} className="flex flex-col gap-4">
-          <input
-            type="file"
-            accept="application/pdf"
-            onChange={e => setTTFile(e.target.files?.[0] || null)}
-            className="block w-full text-sm text-gray-700 dark:text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            disabled={ttUploading}
-          />
-          <button
-            type="submit"
-            className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-400 text-white font-semibold shadow hover:from-blue-700 hover:to-cyan-500 transition-colors disabled:opacity-60"
-            disabled={ttUploading || !ttFile}
-          >
-            {ttUploading ? 'Uploading...' : 'Upload Timetable'}
-          </button>
-        </form>
-        {ttUrl && (
-          <div className="mt-4 flex flex-col gap-2">
-            <a href={ttUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-medium">View Timetable PDF</a>
-            <a href={ttUrl} download className="text-emerald-600 underline font-medium">Download Timetable PDF</a>
-          </div>
-        )}
-      </div>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -275,113 +264,6 @@ const AdminDashboard: React.FC = () => {
             </p>
           </div>
           <NotificationBell userType="admin" userId={user?.id || ''} />
-        </motion.div>
-
-        {/* Key Metrics */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8"
-        >
-          {/* Users */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics.totalUsers.toLocaleString()}</p>
-              </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm text-green-600 dark:text-green-400">
-              <TrendingUp className="w-4 h-4 mr-1" />
-              {analytics.activeUsers} active users
-            </div>
-          </div>
-
-          {/* Feedback */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pending Feedback</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {feedbackStats ? feedbackStats.pending : 0}
-                </p>
-              </div>
-              <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <MessageSquare className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              {feedbackStats ? `${feedbackStats.percent_resolved}% resolved` : '--'}
-            </div>
-          </div>
-
-          {/* SOS Reports */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-red-200 dark:border-red-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-red-600 dark:text-red-400 mb-1">SOS Reports</p>
-                <p className="text-2xl font-bold text-red-700 dark:text-red-400">{sosReports.length}</p>
-              </div>
-              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              {sosReports.filter(r => r.status === 'pending' || !r.status).length} pending, {sosReports.filter(r => r.status === 'in-progress').length} in progress, {sosReports.filter(r => r.status === 'solved').length} solved
-            </div>
-          </div>
-
-          {/* Incident Reports */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-yellow-200 dark:border-yellow-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-yellow-600 dark:text-yellow-400 mb-1">Incident Reports</p>
-                <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{incidentReports.length}</p>
-              </div>
-              <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              {incidentReports.filter(r => r.status === 'pending' || !r.status).length} pending, {incidentReports.filter(r => r.status === 'in-progress').length} in progress, {incidentReports.filter(r => r.status === 'solved').length} solved
-            </div>
-          </div>
-
-          {/* Buses */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-green-200 dark:border-green-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600 dark:text-green-400 mb-1">Active Buses</p>
-                <p className="text-2xl font-bold text-green-700 dark:text-green-400">{analytics.activeBuses}</p>
-              </div>
-              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Bus className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              Out of {analytics.totalBuses} total buses
-            </div>
-          </div>
-
-          {/* Lost & Found */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-purple-200 dark:border-purple-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-600 dark:text-purple-400 mb-1">Lost & Found</p>
-                <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">{analytics.totalLostFound - analytics.matchedItems}</p>
-              </div>
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <Package className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              {analytics.matchedItems} items matched
-            </div>
-          </div>
         </motion.div>
 
         {/* Quick Actions */}
@@ -432,200 +314,39 @@ const AdminDashboard: React.FC = () => {
           </div>
         </motion.div>
 
-
-        {/* Live Bus Map for Admin */}
-        <div className="my-8">
+        {/* Live Bus Map for Admin - Larger Size */}
+        <div className="my-12">
           <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Live Bus Locations</h2>
-          <BusMap />
+          <div className="w-full h-[600px] bg-white dark:bg-gray-800 rounded-xl shadow border border-blue-200 dark:border-blue-700 p-4 flex items-center justify-center">
+            <BusMap buses={buses} />
+          </div>
         </div>
 
-        {/* Charts and Reports */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* User Growth Chart */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">User Growth</h3>
-              <Activity className="w-5 h-5 text-gray-400" />
+        {/* Timetable Upload Section - moved below map */}
+        <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow border border-blue-200 dark:border-blue-700 p-6 mb-10 mt-8">
+          <h2 className="text-xl font-bold mb-3 text-blue-700 dark:text-blue-300">Upload Bus Timetable PDF</h2>
+          <form onSubmit={handleTTUpload} className="flex flex-col gap-4">
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={e => setTTFile(e.target.files?.[0] || null)}
+              className="block w-full text-sm text-gray-700 dark:text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              disabled={ttUploading}
+            />
+            <button
+              type="submit"
+              className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-400 text-white font-semibold shadow hover:from-blue-700 hover:to-cyan-500 transition-colors disabled:opacity-60"
+              disabled={ttUploading || !ttFile}
+            >
+              {ttUploading ? 'Uploading...' : 'Upload Timetable'}
+            </button>
+          </form>
+          {ttUrl && (
+            <div className="mt-4 flex flex-col gap-2">
+              <a href={ttUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-medium">View Timetable PDF</a>
+              <a href={ttUrl} download className="text-emerald-600 underline font-medium">Download Timetable PDF</a>
             </div>
-            <div className="space-y-4">
-              {analytics.userGrowth && analytics.userGrowth.length > 0 ? (
-                analytics.userGrowth.slice(-5).map((data, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {new Date(data.date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {data.users.toLocaleString()} users
-                      </p>
-                      <p className="text-xs text-green-600 dark:text-green-400">
-                        +{data.newUsers} new
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center text-gray-400 dark:text-gray-500 py-6">No data available</div>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Feedback Trends */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Feedback Trends</h3>
-              <MessageSquare className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="space-y-4">
-              {analytics.feedbackTrends && analytics.feedbackTrends.length > 0 ? (
-                analytics.feedbackTrends.slice(-5).map((data, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {new Date(data.date).toLocaleDateString()}
-                    </span>
-                    <div className="flex items-center space-x-4 text-sm">
-                      <div className="flex items-center space-x-1">
-                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                        <span className="text-gray-900 dark:text-white">{data.complaints}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span className="text-gray-900 dark:text-white">{data.suggestions}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-gray-900 dark:text-white">{data.compliments}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center text-gray-400 dark:text-gray-500 py-6">No data available</div>
-              )}
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <span className="text-gray-600 dark:text-gray-400">Complaints</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-gray-600 dark:text-gray-400">Suggestions</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-gray-600 dark:text-gray-400">Compliments</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Popular Routes and Bus Utilization */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Popular Routes */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Popular Routes</h3>
-              <Star className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="space-y-4">
-              {analytics.popularRoutes && analytics.popularRoutes.length > 0 ? (
-                analytics.popularRoutes.map((route, index) => (
-                  <div key={route.routeId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                          #{index + 1}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {route.routeName}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {route.ridership.toLocaleString()} riders
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center text-sm text-green-600 dark:text-green-400">
-                        <TrendingUp className="w-4 h-4 mr-1" />
-                        {route.growth}%
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center text-gray-400 dark:text-gray-500 py-6">No data available</div>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Bus Utilization */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Bus Utilization</h3>
-              <BarChart3 className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="space-y-4">
-              {analytics.busUtilization && analytics.busUtilization.length > 0 ? (
-                analytics.busUtilization.map((bus) => (
-                  <div key={bus.busId} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {bus.busNumber}
-                      </span>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {Math.round(bus.utilization * 100)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${
-                          bus.utilization > 0.8 ? 'bg-green-500' :
-                          bus.utilization > 0.6 ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`}
-                        style={{ width: `${bus.utilization * 100}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {bus.totalTrips} trips completed
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center text-gray-400 dark:text-gray-500 py-6">No data available</div>
-              )}
-            </div>
-          </motion.div>
+          )}
         </div>
       </div>
 

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../services/session_service.dart';
+import '../services/location_service.dart';
 
 class IncidentScreen extends StatefulWidget {
   const IncidentScreen({super.key});
@@ -17,14 +20,21 @@ class _IncidentScreenState extends State<IncidentScreen> {
   Future<void> _reportIncident() async {
     setState(() => _loading = true);
     try {
-      final response = await http.post(
-        Uri.parse('https://your-backend-url/api/incident'),
-        body: {
-          'title': _titleController.text,
-          'description': _descController.text,
-        },
+      final userId = await SessionService.getUserId();
+      final position = await LocationService.getCurrentLocation();
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://yatraone-backend.onrender.com/api/incident'),
       );
-      if (response.statusCode == 200) {
+      request.fields['user_id'] = userId ?? '';
+      request.fields['type'] = _titleController.text;
+      request.fields['description'] = _descController.text;
+      request.fields['latitude'] = position.latitude.toString();
+      request.fields['longitude'] = position.longitude.toString();
+      // If you want to add photo: request.files.add(await http.MultipartFile.fromPath('photo', filePath));
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 201) {
         setState(() {
           _response = 'Incident reported successfully!';
         });
@@ -41,18 +51,22 @@ class _IncidentScreenState extends State<IncidentScreen> {
       setState(() => _loading = false);
     }
   }
-
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Report Incident')),
+      appBar: AppBar(
+        title: Text('Report Incident', style: Theme.of(context).textTheme.headlineMedium),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
                 child: Column(
@@ -61,39 +75,43 @@ class _IncidentScreenState extends State<IncidentScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.report, size: 40, color: Colors.orange),
-                        const SizedBox(width: 12),
+                        Icon(Icons.report_gmailerrorred_rounded, size: 48, color: colorScheme.tertiary, semanticLabel: 'Incident Icon'),
+                        const SizedBox(width: 16),
                         Text('Report Incident', style: Theme.of(context).textTheme.titleLarge),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    const Text('Incident Title:'),
+                    const SizedBox(height: 28),
+                    Text('Incident Title:', style: Theme.of(context).textTheme.bodyLarge),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _titleController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Short title...',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.title),
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.title_outlined),
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
                       ),
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 16),
-                    const Text('Description:'),
+                    Text('Description:', style: Theme.of(context).textTheme.bodyLarge),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _descController,
                       maxLines: 3,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Describe the incident...',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.edit),
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.edit_outlined),
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
                       ),
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.report, color: Colors.white),
+                      child: FilledButton.icon(
+                        icon: Icon(Icons.report_gmailerrorred_rounded, color: colorScheme.onTertiary),
                         label: _loading
                             ? const SizedBox(
                                 width: 20,
@@ -102,17 +120,33 @@ class _IncidentScreenState extends State<IncidentScreen> {
                               )
                             : const Text('Report Incident'),
                         onPressed: _loading ? null : _reportIncident,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          textStyle: const TextStyle(fontSize: 16),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colorScheme.tertiary,
+                          foregroundColor: colorScheme.onTertiary,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          textStyle: Theme.of(context).textTheme.titleMedium,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ),
                     ),
-                    if (_response != null) ...[
-                      const SizedBox(height: 20),
-                      Text(_response!, style: TextStyle(color: _response == 'Incident reported successfully!' ? Colors.green : Colors.red)),
-                    ],
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: _response != null
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 20),
+                              child: Text(
+                                _response!,
+                                key: ValueKey(_response),
+                                style: TextStyle(
+                                  color: _response == 'Incident reported successfully!'
+                                      ? Colors.green
+                                      : colorScheme.error,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   ],
                 ),
               ),

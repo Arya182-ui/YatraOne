@@ -13,17 +13,21 @@ function HeroNav() {
                     <Link to="/" className="flex items-center gap-3 group">
                         <img src={Logo} alt="YatraOne Logo" className="h-14 w-auto mb-2 inline-block drop-shadow-xl rounded-xl" />
                     </Link>
-                    <LanguageSelector />
-                    <div className="flex items-center gap-4">
+                    {/* Hide LanguageSelector on mobile */}
+                    <div className="hidden md:block">
+                        <LanguageSelector />
+                    </div>
+                    {/* Responsive button layout */}
+                    <div className="flex items-center gap-2 sm:gap-4">
                         <Link
                             to="/register"
-                            className="px-5 py-2 rounded-xl text-blue-700 font-semibold bg-blue-50 hover:bg-blue-100 transition-all shadow-sm border border-blue-100"
+                            className="px-4 py-2 sm:px-5 sm:py-2 rounded-xl text-blue-700 font-semibold bg-blue-50 hover:bg-blue-100 transition-all shadow-sm border border-blue-100 text-sm sm:text-base"
                         >
                             {t('publicnav.signup', 'Sign up')}
                         </Link>
                         <Link
                             to="/login"
-                            className="px-5 py-2 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg hover:from-blue-700 hover:to-emerald-700 transition-all border-0"
+                            className="px-4 py-2 sm:px-5 sm:py-2 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg hover:from-blue-700 hover:to-emerald-700 transition-all border-0 text-sm sm:text-base"
                         >
                             {t('publicnav.get_started', 'Get Started')}
                         </Link>

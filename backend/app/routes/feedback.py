@@ -63,9 +63,8 @@ def get_feedback(
     Retrieve feedback entries, optionally filtered by user ID, with pagination.
     """
     feedback_ref = firestore_db.collection("feedback")
-    # Only fetch required fields for low-bandwidth optimization
-    fields = ["user_id", "message", "status", "created_at"]
-    query = feedback_ref.select(fields)
+    # Fetch all fields required by Feedback model
+    query = feedback_ref
     if user_id:
         query = query.where("user_id", "==", user_id)
     query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
@@ -73,6 +72,10 @@ def get_feedback(
     for doc in query.offset(skip).limit(limit).stream():
         fb = doc.to_dict()
         fb["id"] = doc.id
+        # Ensure all required fields are present, else set to None or default
+        for field in ["type", "subject", "message", "status", "user_id"]:
+            if field not in fb:
+                fb[field] = None
         feedbacks.append(Feedback(**fb))
     return feedbacks
 

@@ -122,13 +122,15 @@ const BusManagement: React.FC = () => {
   // Add Route Modal State
   const [showAddRouteModal, setShowAddRouteModal] = useState(false);
   const [addRouteForm, setAddRouteForm] = useState({
-    route_name: '',
-    start_latitude: '',
-    start_longitude: '',
-    end_latitude: '',
-    end_longitude: '',
-    stops: '',
-    speed_limit: '',
+  route_name: '',
+  start_location_name: '',
+  start_latitude: '',
+  start_longitude: '',
+  end_location_name: '',
+  end_latitude: '',
+  end_longitude: '',
+  stops: '',
+  speed_limit: '',
   });
   const [addRouteLoading, setAddRouteLoading] = useState(false);
 
@@ -148,8 +150,10 @@ const BusManagement: React.FC = () => {
     setShowAddRouteModal(true);
     setAddRouteForm({
       route_name: '',
+      start_location_name: '',
       start_latitude: '',
       start_longitude: '',
+      end_location_name: '',
       end_latitude: '',
       end_longitude: '',
       stops: '',
@@ -161,24 +165,32 @@ const BusManagement: React.FC = () => {
     e.preventDefault();
     setAddRouteLoading(true);
     try {
-      // Prepare payload for backend
-      const payload = {
+      // Prepare payload for backend (prefer names, lat/lon optional)
+      const payload: any = {
         route_name: addRouteForm.route_name,
-        start_latitude: parseFloat(addRouteForm.start_latitude),
-        start_longitude: parseFloat(addRouteForm.start_longitude),
-        end_latitude: parseFloat(addRouteForm.end_latitude),
-        end_longitude: parseFloat(addRouteForm.end_longitude),
+        speed_limit: parseFloat(addRouteForm.speed_limit),
         stops: addRouteForm.stops
           ? addRouteForm.stops.split(',').map(s => s.trim()).filter(Boolean)
           : [],
-        speed_limit: parseFloat(addRouteForm.speed_limit),
       };
+      if (addRouteForm.start_location_name) payload.start_location_name = addRouteForm.start_location_name;
+      if (addRouteForm.end_location_name) payload.end_location_name = addRouteForm.end_location_name;
+      if (addRouteForm.start_latitude && addRouteForm.start_longitude) {
+        payload.start_latitude = parseFloat(addRouteForm.start_latitude);
+        payload.start_longitude = parseFloat(addRouteForm.start_longitude);
+      }
+      if (addRouteForm.end_latitude && addRouteForm.end_longitude) {
+        payload.end_latitude = parseFloat(addRouteForm.end_latitude);
+        payload.end_longitude = parseFloat(addRouteForm.end_longitude);
+      }
       await routeAPI.addRoute(payload);
       setShowAddRouteModal(false);
       setAddRouteForm({
         route_name: '',
+        start_location_name: '',
         start_latitude: '',
         start_longitude: '',
+        end_location_name: '',
         end_latitude: '',
         end_longitude: '',
         stops: '',
@@ -311,13 +323,20 @@ const BusManagement: React.FC = () => {
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 text-center tracking-tight">Add New Route</h2>
           <div className="space-y-4">
             <input type="text" required value={addRouteForm.route_name} onChange={e => setAddRouteForm(f => ({ ...f, route_name: e.target.value }))} placeholder="Route Name" className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
-            <input type="number" step="any" required value={addRouteForm.start_latitude} onChange={e => setAddRouteForm(f => ({ ...f, start_latitude: e.target.value }))} placeholder="Start Latitude" className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
-            <input type="number" step="any" required value={addRouteForm.start_longitude} onChange={e => setAddRouteForm(f => ({ ...f, start_longitude: e.target.value }))} placeholder="Start Longitude" className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
-            <input type="number" step="any" required value={addRouteForm.end_latitude} onChange={e => setAddRouteForm(f => ({ ...f, end_latitude: e.target.value }))} placeholder="End Latitude" className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
-            <input type="number" step="any" required value={addRouteForm.end_longitude} onChange={e => setAddRouteForm(f => ({ ...f, end_longitude: e.target.value }))} placeholder="End Longitude" className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
-            <input type="text" value={addRouteForm.stops} onChange={e => setAddRouteForm(f => ({ ...f, stops: e.target.value }))} placeholder="Stops (comma separated)" className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
+            <input type="text" value={addRouteForm.start_location_name} onChange={e => setAddRouteForm(f => ({ ...f, start_location_name: e.target.value }))} placeholder="Start Location Name (optional)" className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
+            <div className="flex gap-2">
+              <input type="number" step="any" value={addRouteForm.start_latitude} onChange={e => setAddRouteForm(f => ({ ...f, start_latitude: e.target.value }))} placeholder="Start Latitude (optional)" className="w-1/2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
+              <input type="number" step="any" value={addRouteForm.start_longitude} onChange={e => setAddRouteForm(f => ({ ...f, start_longitude: e.target.value }))} placeholder="Start Longitude (optional)" className="w-1/2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
+            </div>
+            <input type="text" value={addRouteForm.end_location_name} onChange={e => setAddRouteForm(f => ({ ...f, end_location_name: e.target.value }))} placeholder="End Location Name (optional)" className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
+            <div className="flex gap-2">
+              <input type="number" step="any" value={addRouteForm.end_latitude} onChange={e => setAddRouteForm(f => ({ ...f, end_latitude: e.target.value }))} placeholder="End Latitude (optional)" className="w-1/2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
+              <input type="number" step="any" value={addRouteForm.end_longitude} onChange={e => setAddRouteForm(f => ({ ...f, end_longitude: e.target.value }))} placeholder="End Longitude (optional)" className="w-1/2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
+            </div>
+            <input type="text" value={addRouteForm.stops} onChange={e => setAddRouteForm(f => ({ ...f, stops: e.target.value }))} placeholder="Stops (comma separated names)" className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
             <input type="number" min={1} required value={addRouteForm.speed_limit} onChange={e => setAddRouteForm(f => ({ ...f, speed_limit: e.target.value }))} placeholder="Speed Limit (km/h)" className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 text-base" />
           </div>
+          <div className="text-xs text-gray-500 mt-2">You can provide either location names or coordinates (or both). If both are provided, coordinates will be used directly. Stops should be comma separated names.</div>
           <div className="flex gap-3 justify-center mt-6">
             <button type="submit" className="px-6 py-2 rounded-lg bg-blue-500 text-white font-semibold shadow-sm hover:bg-blue-600 transition-colors" disabled={addRouteLoading}>{addRouteLoading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : 'Add Route'}</button>
             <button type="button" className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold shadow-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" onClick={() => setShowAddRouteModal(false)} disabled={addRouteLoading}>Cancel</button>

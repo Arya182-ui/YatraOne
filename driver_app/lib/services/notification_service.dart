@@ -18,7 +18,7 @@ class NotificationService extends ChangeNotifier {
 
   Future<void> fetchNotifications() async {
     try {
-      final response = await http.get(Uri.parse('https://your-backend-url/api/notifications'));
+      final response = await http.get(Uri.parse('https://yatraone-backend.onrender.com/api/notifications'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data is List) {

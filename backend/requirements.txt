@@ -8,3 +8,11 @@ starlette-compress
 brotli-asgi
 brotli
 requests
+python-dotenv
+python-jose
+redis
+google-cloud-firestore
+passlib
+PyJWT
+twilio
+jinja2

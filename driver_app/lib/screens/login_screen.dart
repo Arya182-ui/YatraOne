@@ -57,72 +57,88 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Driver Login')),
+      appBar: AppBar(
+        title: Text('Driver Login', style: Theme.of(context).textTheme.headlineMedium),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(Icons.directions_bus, size: 48, color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(height: 16),
-                      Text('Welcome, Driver!', style: Theme.of(context).textTheme.headlineMedium),
-                      const SizedBox(height: 24),
+                      Icon(Icons.directions_bus, size: 56, color: Theme.of(context).colorScheme.primary, semanticLabel: 'App Icon'),
+                      const SizedBox(height: 20),
+                      Text('Welcome, Driver!', style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
+                      const SizedBox(height: 28),
                       TextFormField(
                         controller: _emailController,
-                        decoration: const InputDecoration(
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        decoration: InputDecoration(
                           labelText: 'Email',
-                          prefixIcon: Icon(Icons.email),
-                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                          filled: true,
                         ),
-                        validator: (v) => v == null || v.isEmpty ? 'Enter email' : null,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.username, AutofillHints.email],
+                        validator: (val) => val == null || val.isEmpty ? 'Enter your email' : null,
+                        textInputAction: TextInputAction.next,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
                       TextFormField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        decoration: InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock),
-                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                          filled: true,
                         ),
                         obscureText: true,
-                        validator: (v) => v == null || v.isEmpty ? 'Enter password' : null,
+                        autofillHints: const [AutofillHints.password],
+                        validator: (val) => val == null || val.isEmpty ? 'Enter your password' : null,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => _login(),
                       ),
-                      const SizedBox(height: 20),
-                      if (_error != null) ...[
-                        Text(_error!, style: const TextStyle(color: Colors.red)),
-                        const SizedBox(height: 10),
-                      ],
-                      _loading
-                          ? const CircularProgressIndicator()
-                          : SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                icon: const Icon(Icons.login),
-                                label: const Text('Login'),
-                                onPressed: () async {
-                                  await _login();
-                                  if (!mounted) return;
-                                  if (_error == null && !_loading) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Login successful!')),
-                                    );
-                                  }
-                                },
-                                style: Theme.of(context).elevatedButtonTheme.style,
-                              ),
-                            ),
+                      const SizedBox(height: 18),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: _error != null
+                            ? Text(_error!, key: ValueKey(_error), style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600))
+                            : const SizedBox.shrink(),
+                      ),
+                      const SizedBox(height: 18),
+                      ElevatedButton.icon(
+                        icon: _loading
+                            ? const SizedBox(
+                                width: 20, height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.login),
+                        label: Text(_loading ? 'Logging in...' : 'Login'),
+                        onPressed: _loading ? null : _login,
+                        style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
+                          minimumSize: WidgetStateProperty.all(const Size.fromHeight(48)),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       TextButton(
-                        onPressed: () => Navigator.pushNamed(context, '/signup'),
-                        child: const Text('Don\'t have an account? Signup'),
+                        onPressed: _loading ? null : () => Navigator.pushReplacementNamed(context, '/signup'),
+                        child: const Text("Don't have an account? Sign up"),
+                        style: TextButton.styleFrom(
+                          textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ],
                   ),

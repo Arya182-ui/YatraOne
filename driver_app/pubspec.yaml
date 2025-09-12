@@ -1,4 +1,4 @@
-name: driver_app
+name: YatraOne
 version: 1.0.0+1
 description: SIH Driver App for bus location updates
 publish_to: 'none'
@@ -16,11 +16,21 @@ dependencies:
   flutter_local_notifications: ^19.4.1 # For notifications
   cupertino_icons: ^1.0.2            # iOS style icons
   url_launcher: ^6.2.5
+  flutter_localizations:
+    sdk: flutter
+  web_socket_channel: ^3.0.3
 
 dev_dependencies:
-  flutter_lints: ^6.0.0              # Upgraded lints to latest
+  flutter_lints: ^6.0.0 
+  flutter_launcher_icons: ^0.13.1             # Upgraded lints to latest
   flutter_test:
     sdk: flutter
 
 flutter:
   uses-material-design: true
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/favicon.png"
+  favicon: "assets/icon/favicon.png"

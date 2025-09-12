@@ -17,7 +17,7 @@ class ApiService {
     );
     return response.statusCode == 200;
   }
-  static const String baseUrl = 'https://yatraone.onrender.com';
+  static const String baseUrl = 'https://yatraone-backend.onrender.com/api';
   // Get assigned bus for a driver by userId
   static Future<Map<String, dynamic>?> getAssignedBusForUser(String userId) async {
     final token = await SessionService.getToken();

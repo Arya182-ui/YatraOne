@@ -53,6 +53,36 @@ const MobileBusMap: React.FC<MobileBusMapProps> = ({ busId, route, bus, defaultZ
   const busLocation = useBusLocationWebSocket(busId, wsUrlBase, {
     onError: () => setWsFailed(true)
   });
+
+  // --- Offline cache logic ---
+  const CACHE_KEY = `mobilebusmap_last_location_${busId}`;
+  // Save to cache whenever location updates (and online)
+  useEffect(() => {
+    if (navigator.onLine && busLocation && busLocation.latitude && busLocation.longitude) {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(busLocation));
+    }
+  }, [busLocation]);
+
+  // If offline, load from cache
+  const [offlineLocation, setOfflineLocation] = useState<any>(null);
+  useEffect(() => {
+    function handleOffline() {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) setOfflineLocation(JSON.parse(cached));
+      } catch {}
+    }
+    function handleOnline() {
+      setOfflineLocation(null);
+    }
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    if (!navigator.onLine) handleOffline();
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [busId]);
   const [loading, setLoading] = useState(true);
   const [busAddress, setBusAddress] = useState<string>("");
   const [busStatus, setBusStatus] = useState<string>("");
@@ -220,6 +250,7 @@ const MobileBusMap: React.FC<MobileBusMapProps> = ({ busId, route, bus, defaultZ
   // Center: bus if available, else route start, else fallback
   let center: [number, number] = fallbackCenter;
   if (busLocation) center = [busLocation.latitude, busLocation.longitude];
+  else if (offlineLocation) center = [offlineLocation.latitude, offlineLocation.longitude];
   else if (routePoints.length > 0 && Array.isArray(routePoints[0]) && routePoints[0].length === 2 && routePoints[0].every(n => typeof n === 'number' && !isNaN(n))) center = routePoints[0] as [number, number];
 
   return (
@@ -251,12 +282,12 @@ const MobileBusMap: React.FC<MobileBusMapProps> = ({ busId, route, bus, defaultZ
             <Marker position={[route.end_latitude, route.end_longitude]} icon={endIcon} />
           )}
           {/* Bus marker logic: only show if not reached destination or not before start */}
-          {busLocation && busStatus !== 'reached_destination' && busStatus !== 'not_started' && (
-            <Marker position={[busLocation.latitude, busLocation.longitude]} icon={liveBusIcon}>
+          {(busLocation || offlineLocation) && busStatus !== 'reached_destination' && busStatus !== 'not_started' && (
+            <Marker position={busLocation ? [busLocation.latitude, busLocation.longitude] : [offlineLocation.latitude, offlineLocation.longitude]} icon={liveBusIcon}>
               <Popup>
                 <div style={{ minWidth: 180 }}>
                   <div className="font-bold text-blue-700 text-lg mb-1">{t('mobilebusmap.bus', 'Bus')} {bus?.number || busId}</div>
-                  <div className="text-xs text-gray-500 mb-2">{t('mobilebusmap.last_update', 'Last update')}: {busLocation.timestamp ? new Date(busLocation.timestamp).toLocaleTimeString() : t('mobilebusmap.na', 'N/A')}</div>
+                  <div className="text-xs text-gray-500 mb-2">{t('mobilebusmap.last_update', 'Last update')}: {busLocation?.timestamp ? new Date(busLocation.timestamp).toLocaleTimeString() : offlineLocation?.timestamp ? new Date(offlineLocation.timestamp).toLocaleTimeString() : t('mobilebusmap.na', 'N/A')}</div>
                   <div className="mb-2">
                     <b>{t('mobilebusmap.route', 'Route')}:</b> {route?.route_name || bus?.route || '-'}
                   </div>
@@ -270,7 +301,10 @@ const MobileBusMap: React.FC<MobileBusMapProps> = ({ busId, route, bus, defaultZ
                   )}
                   <div><b>{t('mobilebusmap.current_status', 'Current Status')}:</b> {busStatus === 'not_started' ? t('mobilebusmap.not_started', 'Not started') : busStatus === 'just_started' ? t('mobilebusmap.just_started', 'Just started') : busStatus === 'en_route' ? t('mobilebusmap.en_route', 'En route') : busStatus === 'reached_destination' ? t('mobilebusmap.reached', 'Reached') : '-'}</div>
                   <div><b>{t('mobilebusmap.destination', 'Destination')}:</b> {route?.end_latitude && route?.end_longitude ? `${route.end_latitude}, ${route.end_longitude}` : '-'}</div>
-                  <div className="mt-2 text-xs text-gray-400">Lat: {busLocation.latitude}, Lng: {busLocation.longitude}</div>
+                  <div className="mt-2 text-xs text-gray-400">Lat: {busLocation ? busLocation.latitude : offlineLocation.latitude}, Lng: {busLocation ? busLocation.longitude : offlineLocation.longitude}</div>
+                  {!busLocation && offlineLocation && (
+                    <div className="text-yellow-600 font-semibold mt-2">{t('mobilebusmap.offline_cache', 'Offline: Showing last known location')}</div>
+                  )}
                 </div>
               </Popup>
             </Marker>

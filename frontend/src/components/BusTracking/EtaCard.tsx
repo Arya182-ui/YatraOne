@@ -15,6 +15,35 @@ interface EtaCardProps {
 }
 
 const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, status, driverName, avgSpeed, isLive, lastUpdate }) => {
+  // --- Offline cache logic ---
+  const CACHE_KEY = `etacard_last_${busNumber}`;
+  // Save to cache whenever eta/location updates (and online)
+  React.useEffect(() => {
+    if (navigator.onLine && eta && location) {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ eta, location, nextStop, status, driverName, avgSpeed, lastUpdate }));
+    }
+  }, [eta, location, nextStop, status, driverName, avgSpeed, lastUpdate, busNumber]);
+
+  // If offline, load from cache
+  const [offlineData, setOfflineData] = React.useState<any>(null);
+  React.useEffect(() => {
+    function handleOffline() {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) setOfflineData(JSON.parse(cached));
+      } catch {}
+    }
+    function handleOnline() {
+      setOfflineData(null);
+    }
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    if (!navigator.onLine) handleOffline();
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [busNumber]);
   const { t } = useTranslation();
   const [resolvedDriverName, setResolvedDriverName] = React.useState(driverName || t('eta_card.na', 'N/A'));
   const [resolvedEta, setResolvedEta] = React.useState(eta);
@@ -91,6 +120,9 @@ const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, s
     fetchEta();
   }, [eta, avgSpeed, busNumber]);
 
+  // Prefer live props, then offline cache
+  const showData = navigator.onLine || !offlineData ? { eta: resolvedEta, busNumber, nextStop, location, status, driverName: resolvedDriverName, avgSpeed: resolvedAvgSpeed, lastUpdate, isOffline: false } : { ...offlineData, isOffline: true };
+
   return (
     <div className="bg-gradient-to-br from-white via-indigo-50 to-white rounded-2xl px-5 py-3 shadow-lg border border-indigo-200 min-w-[220px] w-full max-w-md flex flex-col items-center gap-2">
       <div className="flex flex-row items-center justify-between w-full mb-1">
@@ -98,19 +130,25 @@ const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, s
           <span className="inline-flex items-center justify-center bg-indigo-100 text-indigo-700 rounded-full w-8 h-8 text-lg font-bold shadow-md">
             <svg xmlns='http://www.w3.org/2000/svg' className='w-5 h-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 8v4l3 3'/></svg>
           </span>
-          <span className="text-lg font-extrabold text-indigo-700 tracking-tight drop-shadow">{resolvedEta}</span>
-          {isLive && (
+          <span className="text-lg font-extrabold text-indigo-700 tracking-tight drop-shadow">{showData.eta}</span>
+          {isLive && !showData.isOffline && (
             <span className="flex items-center ml-2">
               <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse mr-1" title="Live"></span>
               <span className="text-xs text-green-600 font-semibold">{t('eta_card.live', 'Live')}</span>
             </span>
           )}
+          {showData.isOffline && (
+            <span className="flex items-center ml-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1" title="Offline"></span>
+              <span className="text-xs text-yellow-600 font-semibold">{t('eta_card.offline', 'Offline')}</span>
+            </span>
+          )}
         </div>
         <div className="flex flex-col items-end">
           <span className="text-xs text-gray-500 font-semibold uppercase">{t('eta_card.bus', 'Bus')}</span>
-          <span className="text-base font-bold text-blue-700">{busNumber}</span>
-          {lastUpdate && (
-            <span className="text-[10px] text-gray-400 mt-1">{t('eta_card.last_update', 'Updated')}: {new Date(lastUpdate).toLocaleTimeString()}</span>
+          <span className="text-base font-bold text-blue-700">{showData.busNumber}</span>
+          {showData.lastUpdate && (
+            <span className="text-[10px] text-gray-400 mt-1">{t('eta_card.last_update', 'Updated')}: {new Date(showData.lastUpdate).toLocaleTimeString()}</span>
           )}
         </div>
       </div>
@@ -120,14 +158,14 @@ const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, s
             <svg xmlns='http://www.w3.org/2000/svg' className='w-4 h-4 text-indigo-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M17 17l-5-5m0 0l-5-5m5 5V3'/></svg>
             {t('eta_card.next_stop', 'Next Stop')}
           </span>
-          <span className="text-base font-semibold text-gray-800">{nextStop || '-'}</span>
+          <span className="text-base font-semibold text-gray-800">{showData.nextStop || '-'}</span>
         </div>
         <div className="flex flex-col items-start">
           <span className="text-gray-500 text-xs uppercase tracking-wider flex items-center gap-1">
             <svg xmlns='http://www.w3.org/2000/svg' className='w-4 h-4 text-indigo-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M17.657 16.657A8 8 0 1112 4v4l4 2-4 2v4a8 8 0 005.657-1.343z'/></svg>
             {t('eta_card.location', 'Location')}
           </span>
-          <span className="text-base font-semibold text-gray-800">{location || '-'}</span>
+          <span className="text-base font-semibold text-gray-800">{showData.location || '-'}</span>
         </div>
       </div>
       <div className="w-full flex flex-row items-center justify-between gap-2 mt-1">
@@ -136,14 +174,14 @@ const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, s
             <svg xmlns='http://www.w3.org/2000/svg' className='w-4 h-4 text-indigo-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M13 16h-1v-4h-1m4 4h-1v-4h-1'/></svg>
             {t('eta_card.status', 'Status')}
           </span>
-          <span className="text-base font-semibold text-gray-800">{status}</span>
+          <span className="text-base font-semibold text-gray-800">{showData.status}</span>
         </div>
         <div className="flex flex-col items-start">
           <span className="text-gray-500 text-xs uppercase tracking-wider flex items-center gap-1">
             <svg xmlns='http://www.w3.org/2000/svg' className='w-4 h-4 text-indigo-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7'/></svg>
             {t('eta_card.driver', 'Driver')}
           </span>
-          <span className="text-base font-semibold text-gray-800">{resolvedDriverName}</span>
+          <span className="text-base font-semibold text-gray-800">{showData.driverName}</span>
         </div>
       </div>
       <div className="w-full flex flex-row gap-8 items-center justify-center mt-1">
@@ -152,7 +190,7 @@ const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, s
             <svg xmlns='http://www.w3.org/2000/svg' className='w-4 h-4 text-indigo-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M13 16h-1v-4h-1m4 4h-1v-4h-1'/></svg>
             {t('eta_card.avg_speed', 'Avg Speed')}
           </span>
-          <span className="text-base font-semibold text-gray-800">{resolvedAvgSpeed}</span>
+          <span className="text-base font-semibold text-gray-800">{showData.avgSpeed}</span>
         </div>
       </div>
     </div>

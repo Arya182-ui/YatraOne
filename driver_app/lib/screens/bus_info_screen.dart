@@ -37,49 +37,58 @@ class _BusInfoScreenState extends State<BusInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Assigned Bus Info')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
-              : _bus == null
-                  ? const Center(child: Text('No bus assigned'))
-                  : Center(
-                      child: SingleChildScrollView(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Card(
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.directions_bus, size: 48, color: Theme.of(context).colorScheme.primary),
-                                      const SizedBox(width: 16),
-                                      Text(_bus!['number'] ?? '', style: Theme.of(context).textTheme.headlineMedium),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 24),
-                                  ListTile(
-                                    leading: const Icon(Icons.confirmation_number),
-                                    title: Text('Bus ID: ${_bus!['id'] ?? ''}'),
-                                  ),
-                                  ListTile(
-                                    leading: const Icon(Icons.person),
-                                    title: Text('Driver ID: ${_bus!['driverId'] ?? ''}'),
-                                  ),
-                                ],
+      appBar: AppBar(
+        title: Text('Assigned Bus Info', style: Theme.of(context).textTheme.headlineMedium),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600)))
+                : _bus == null
+                    ? const Center(child: Text('No bus assigned'))
+                    : Center(
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Card(
+                              elevation: 3,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.directions_bus, size: 56, color: Theme.of(context).colorScheme.primary, semanticLabel: 'Bus Icon'),
+                                        const SizedBox(width: 20),
+                                        Expanded(
+                                          child: Text(_bus!['number'] ?? '', style: Theme.of(context).textTheme.headlineMedium),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 28),
+                                    ListTile(
+                                      leading: const Icon(Icons.confirmation_number_outlined),
+                                      title: Text('Bus ID: ${_bus!['id'] ?? ''}', style: Theme.of(context).textTheme.bodyLarge),
+                                    ),
+                                    ListTile(
+                                      leading: const Icon(Icons.person_outline),
+                                      title: Text('Driver ID: ${_bus!['driverId'] ?? ''}', style: Theme.of(context).textTheme.bodyLarge),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
+      ),
     );
   }
 }

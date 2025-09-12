@@ -129,7 +129,7 @@ def get_users(skip: int = Query(0, ge=0), limit: int = Query(20, le=100)):
     from google.cloud import firestore
     users_ref = firestore_db.collection('users')
     # Only fetch required fields for low-bandwidth optimization
-    fields = ["email", "first_name", "last_name"]
+    fields = ["email", "first_name", "last_name", "role"]
     query = users_ref.select(fields).order_by("email")
     docs = query.offset(skip).limit(limit).stream()
     users = []

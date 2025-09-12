@@ -18,20 +18,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final localizationService = Provider.of<LocalizationService>(context);
     final offlineService = Provider.of<OfflineService>(context);
 
-  double textScale = MediaQuery.of(context).textScaler.scale(1.0);
+    double textScale = MediaQuery.of(context).textScaler.scale(1.0);
     Locale currentLocale = localizationService.currentLocale;
     bool notificationsEnabled = notificationService.enabled;
     bool offlineMode = offlineService.offlineMode;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        title: Text('Settings', style: Theme.of(context).textTheme.headlineMedium),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
                 child: Column(
@@ -40,12 +45,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.settings, size: 40, color: Theme.of(context).colorScheme.primary),
-                        const SizedBox(width: 12),
+                        Icon(Icons.settings, size: 48, color: colorScheme.primary, semanticLabel: 'Settings Icon'),
+                        const SizedBox(width: 16),
                         Text('Settings', style: Theme.of(context).textTheme.titleLarge),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
                     SwitchListTile(
                       title: const Text('Enable Notifications'),
                       value: notificationsEnabled,
@@ -55,7 +60,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           SnackBar(content: Text(val ? 'Notifications enabled' : 'Notifications disabled')),
                         );
                       },
-                      secondary: const Icon(Icons.notifications_active),
+                      secondary: const Icon(Icons.notifications_active_outlined),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      tileColor: colorScheme.surfaceVariant,
                     ),
                     const Divider(),
                     SwitchListTile(
@@ -67,15 +74,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           SnackBar(content: Text(val ? 'Offline mode enabled' : 'Offline mode disabled')),
                         );
                       },
-                      secondary: const Icon(Icons.cloud_off),
+                      secondary: const Icon(Icons.cloud_off_outlined),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      tileColor: colorScheme.surfaceVariant,
                     ),
                     const Divider(),
                     ListTile(
-                      leading: const Icon(Icons.accessibility),
+                      leading: const Icon(Icons.text_fields_rounded),
                       title: const Text('Text Size'),
                       subtitle: Text('Current: ${textScale.toStringAsFixed(1)}x'),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      tileColor: Colors.grey[100],
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      tileColor: colorScheme.surfaceVariant,
                       onTap: () {
                         showDialog(
                           context: context,
@@ -122,11 +131,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const Divider(),
                     ListTile(
-                      leading: const Icon(Icons.language),
+                      leading: const Icon(Icons.language_rounded),
                       title: const Text('Language'),
                       subtitle: Text(currentLocale.languageCode == 'en' ? 'English' : 'Hindi'),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      tileColor: Colors.grey[100],
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      tileColor: colorScheme.surfaceVariant,
                       onTap: () {
                         showDialog(
                           context: context,
