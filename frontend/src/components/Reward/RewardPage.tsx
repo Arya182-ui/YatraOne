@@ -43,14 +43,14 @@ const RewardPage: React.FC = () => {
           <div className="w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-br from-green-400/80 to-blue-400/70 dark:from-green-700/70 dark:to-blue-700/60 shadow-lg mb-2">
             <span className="material-symbols-rounded text-6xl text-white drop-shadow">★</span>
           </div>
-          <h1 className="text-4xl font-extrabold mb-2 text-blue-800 dark:text-blue-200 tracking-tight">{t('Your Reward Points')}</h1>
+          <h1 className="text-4xl font-extrabold mb-2 text-blue-800 dark:text-blue-200 tracking-tight">{t('reward.points_title', 'Your Reward Points')}</h1>
           {loading ? (
-            <div className="text-2xl text-gray-500 font-semibold">{t('Loading...')}</div>
+            <div className="text-2xl text-gray-500 font-semibold">{t('common.loading', 'Loading...')}</div>
           ) : (
             <div className="text-7xl font-extrabold text-green-600 dark:text-green-300 mb-2 drop-shadow-lg tracking-tight">{points}</div>
           )}
-          <div className="text-lg text-gray-700 dark:text-gray-300 mt-2 font-medium">{t('Earn points by reporting Lost & Found, commenting, or using the app more!')}</div>
-          <div className="mt-8 text-base text-gray-400 dark:text-gray-500 italic">{t('More games and rewards coming soon!')}</div>
+          <div className="text-lg text-gray-700 dark:text-gray-300 mt-2 font-medium">{t('reward.earn_points_hint', 'Earn points by reporting Lost & Found, commenting, or using the app more!')}</div>
+          <div className="mt-8 text-base text-gray-400 dark:text-gray-500 italic">{t('reward.more_coming_soon', 'More games and rewards coming soon!')}</div>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useBusLocationWebSocket } from '../../lib/useBusLocationWebSocket';
 import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -46,7 +47,12 @@ const endIcon = new L.Icon({
 const MobileBusMap: React.FC<MobileBusMapProps> = ({ busId, route, bus, defaultZoom = 12 }) => {
   const { t } = useTranslation();
   // State for live bus location
-  const [busLocation, setBusLocation] = useState<{ latitude: number; longitude: number; timestamp?: string } | null>(null);
+  const wsUrlBase = import.meta.env.VITE_BACKEND_WS_URL || 'http://localhost:8000';
+  const [wsFailed, setWsFailed] = useState(false);
+  const [fallbackLocation, setFallbackLocation] = useState<any>(null);
+  const busLocation = useBusLocationWebSocket(busId, wsUrlBase, {
+    onError: () => setWsFailed(true)
+  });
   const [loading, setLoading] = useState(true);
   const [busAddress, setBusAddress] = useState<string>("");
   const [busStatus, setBusStatus] = useState<string>("");
@@ -163,12 +169,13 @@ const MobileBusMap: React.FC<MobileBusMapProps> = ({ busId, route, bus, defaultZ
     }
   }, [route, busLocation]);
 
+  // Fallback polling if no WebSocket data for 15s
   useEffect(() => {
+    if (busLocation) return;
     let interval: any;
     const fetchLocation = async () => {
       try {
         const all = await busLocationAPI.getAllLocations();
-        // Try to match busId against all possible keys (id, bus_id, busNumber, number), as string or number
         const match = (a: any, b: any) => a && b && String(a) === String(b);
         const busLoc = all.find((b: any) =>
           match(b.id, busId) ||
@@ -177,18 +184,14 @@ const MobileBusMap: React.FC<MobileBusMapProps> = ({ busId, route, bus, defaultZ
           match(b.number, busId)
         );
         if (busLoc && busLoc.latitude && busLoc.longitude) {
-          setBusLocation({ latitude: busLoc.latitude, longitude: busLoc.longitude, timestamp: busLoc.timestamp });
-        } else {
-          setBusLocation(null);
+          setBusAddress(`${busLoc.latitude}, ${busLoc.longitude}`);
         }
-      } finally {
-        setLoading(false);
-      }
+      } catch { }
     };
     fetchLocation();
-    interval = setInterval(fetchLocation, 10000);
+    interval = setInterval(fetchLocation, 15000);
     return () => clearInterval(interval);
-  }, [busId]);
+  }, [busId, busLocation]);
 
   // Reverse geocode bus location using backend proxy
   useEffect(() => {

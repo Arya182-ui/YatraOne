@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, Body, Depends
 from app.firebase import realtime_db, firestore_db
 from pydantic import BaseModel
 from typing import Optional
+from app.routes.bus_location_ws import manager
+from datetime import datetime
 
 router = APIRouter()
 
@@ -14,7 +16,7 @@ class LocationUpdateRequest(BaseModel):
     driver_id: str
 
 @router.post("/bus-locations-realtime/update")
-def update_bus_location(data: LocationUpdateRequest):
+async def update_bus_location(data: LocationUpdateRequest):
     """
     Update the real-time location and speed of a bus. Only the assigned driver can update.
     Speed is now required and must be sent by the driver app (from Android GPS).
@@ -38,4 +40,15 @@ def update_bus_location(data: LocationUpdateRequest):
     if data.timestamp is not None:
         loc_data['timestamp'] = data.timestamp
     realtime_db.child('bus_locations').child(data.bus_id).set(loc_data)
+
+    # Broadcast to all websocket clients for this bus
+    await manager.broadcast(
+        data.bus_id,
+        {
+            "latitude": data.latitude,
+            "longitude": data.longitude,
+            "speed": data.speed,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    )
     return {"success": True, "bus_id": data.bus_id, "location": loc_data}

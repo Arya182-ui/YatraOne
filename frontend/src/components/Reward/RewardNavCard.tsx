@@ -30,11 +30,11 @@ const RewardNavCard: React.FC = () => {
         <div className="w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-tr from-yellow-400 via-amber-300 to-pink-300 dark:from-yellow-600 dark:via-yellow-700 dark:to-pink-700 shadow-xl mb-2 border-4 border-white dark:border-gray-900">
           <span className="material-symbols-rounded text-6xl text-yellow-100 drop-shadow-lg">stars</span>
         </div>
-        <div className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-tr from-yellow-500 via-amber-500 to-pink-500 dark:from-yellow-300 dark:via-yellow-400 dark:to-pink-300 mb-1 tracking-tight drop-shadow">{t('Rewards')}</div>
-        <div className="text-lg font-semibold text-gray-800 dark:text-yellow-200 mb-2">{t('Earn & Redeem Points')}</div>
-        <p className="text-gray-600 dark:text-gray-200 text-base mb-2 text-center max-w-xs font-medium">{t('Check your points and earn more by using the app!')}</p>
+        <div className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-tr from-yellow-500 via-amber-500 to-pink-500 dark:from-yellow-300 dark:via-yellow-400 dark:to-pink-300 mb-1 tracking-tight drop-shadow">{t('reward.card_title', 'Rewards')}</div>
+        <div className="text-lg font-semibold text-gray-800 dark:text-yellow-200 mb-2">{t('reward.card_subtitle', 'Earn & Redeem Points')}</div>
+        <p className="text-gray-600 dark:text-gray-200 text-base mb-2 text-center max-w-xs font-medium">{t('reward.card_hint', 'Check your points and earn more by using the app!')}</p>
         <Link to="/rewards" className="px-8 py-3 bg-gradient-to-r from-yellow-400 via-amber-400 to-pink-400 text-white rounded-full shadow-xl hover:from-yellow-500 hover:to-pink-500 transition font-bold text-lg mt-2 ring-2 ring-yellow-200 dark:ring-yellow-700">
-          {t('View Rewards')}
+          {t('reward.card_cta', 'View Rewards')}
         </Link>
       </div>
     </div>

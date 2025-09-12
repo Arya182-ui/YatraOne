@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/location_service.dart';
+import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
 import 'dart:async';
 
@@ -24,7 +25,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   bool _updating = false;
   bool _online = false;
-  Timer? _timer;
+  StreamSubscription<Position>? _locationSubscription;
   String? _status;
 
   Future<void> _sendLocation() async {
@@ -72,14 +73,41 @@ class _MainScreenState extends State<MainScreen> {
     }
     if (_updating) return;
     setState(() { _updating = true; _status = 'Started auto updates.'; });
-    _timer = Timer.periodic(const Duration(seconds: 15), (timer) {
-      _sendLocation();
+    _locationSubscription = LocationService.getLocationStream(distanceFilterMeters: 10)
+        .listen((pos) async {
+      final userId = widget.userId;
+      if (userId == null || userId.isEmpty) {
+        setState(() { _status = 'User ID missing.'; });
+        return;
+      }
+      final assignedBus = await ApiService.getAssignedBusForUser(userId);
+      if (assignedBus == null) {
+        setState(() { _status = 'No bus assigned.'; });
+        return;
+      }
+      final busId = assignedBus['id'];
+      final token = await SessionService.getToken();
+      await ApiService.updateLocation(
+        busId: busId,
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+        speed: pos.speed,
+        timestamp: DateTime.now().toIso8601String(),
+        token: token,
+      );
+      if (!mounted) return;
+      setState(() { _status = 'Location sent (auto)!'; });
+    },
+    onError: (e) {
+      if (!mounted) return;
+      setState(() { _status = 'Location stream error: $e'; });
     });
   }
 
   void _stopUpdates() {
     setState(() { _updating = false; _status = 'Stopped auto updates.'; });
-    _timer?.cancel();
+    _locationSubscription?.cancel();
+    _locationSubscription = null;
   }
 
   Future<void> _toggleOnline(bool value) async {
@@ -96,12 +124,12 @@ class _MainScreenState extends State<MainScreen> {
       if (!success) _status = 'Failed to update status.';
       if (!_online) _updating = false;
     });
-    if (!_online) _timer?.cancel();
+  if (!_online) _stopUpdates();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _locationSubscription?.cancel();
     super.dispose();
   }
 

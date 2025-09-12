@@ -87,11 +87,6 @@ src/
    npm run dev
    ```
 
-4. **Access the application**
-   - Open http://localhost:5173 in your browser
-   - Use demo accounts to explore features:
-     - User Demo: user@smartbus.com / demo123
-     - Admin Demo: admin@smartbus.com / demo123
 
 ## 🔧 Production Setup
 

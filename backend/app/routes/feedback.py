@@ -104,7 +104,7 @@ def submit_feedback(feedback: Feedback):
     try:
         from app.email_utils import send_template_email
         send_template_email(
-            to_email="admin@yatraone.com",  # Replace with real admin email or list
+            to_email="arya119000@gmail.com",  # Replace with real admin email or list
             subject="New Feedback Submitted",
             template_name="important_user.html",
             context={

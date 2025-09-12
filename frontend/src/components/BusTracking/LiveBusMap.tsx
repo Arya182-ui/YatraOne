@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { useBusLocationWebSocket } from '../../lib/useBusLocationWebSocket';
 import { useTranslation } from 'react-i18next';
 import { Map as LeafletMap } from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
@@ -60,77 +61,117 @@ const reverseGeocode = async (lat: number, lon: number) => {
 };
 
 const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
+  const [driverName, setDriverName] = React.useState<string>('N/A');
+
+  // Fetch driver name if not present in bus object
+  React.useEffect(() => {
+    async function fetchDriver() {
+      if (bus?.driver && bus.driver.name) {
+        setDriverName(bus.driver.name);
+        return;
+      }
+      // Try to get driverId from bus object
+      const driverId = (bus as any)?.driverId;
+      if (driverId) {
+        try {
+          const res = await api.get(`/users/${driverId}`);
+          if (res.data && (res.data.firstName || res.data.lastName)) {
+            setDriverName(`${res.data.firstName || ''} ${res.data.lastName || ''}`.trim() || 'N/A');
+          } else if (res.data && res.data.name) {
+            setDriverName(res.data.name);
+          } else {
+            setDriverName('N/A');
+          }
+        } catch {
+          setDriverName('N/A');
+        }
+      } else {
+        setDriverName('N/A');
+      }
+    }
+    fetchDriver();
+  }, [bus]);
   const { t } = useTranslation();
-  const [location, setLocation] = React.useState<{ latitude: number; longitude: number; timestamp?: string } | null>(null);
-  // const [loading, setLoading] = React.useState(true);
+  const wsUrlBase = import.meta.env.VITE_BACKEND_WS_URL || 'http://localhost:8000';
+  const [wsFailed, setWsFailed] = React.useState(false);
+  const [fallbackLocation, setFallbackLocation] = React.useState<any>(null);
+  const location = useBusLocationWebSocket(busId, wsUrlBase, {
+    onError: () => setWsFailed(true)
+  });
   const [busAddress, setBusAddress] = React.useState<string>("");
   const [busStatus, setBusStatus] = React.useState<string>("");
   const [upcomingStop, setUpcomingStop] = React.useState<string>("");
   const [eta, setEta] = React.useState<string>('N/A');
   const [avgSpeed, setAvgSpeed] = React.useState<string>('N/A');
-  // Fetch ETA and avg speed when location or route changes
+
+  const mapRef = useRef<LeafletMap | null>(null);
+
+  // Fetch ETA and avg speed from backend when location or route changes
   React.useEffect(() => {
+    const loc = location || fallbackLocation;
+    if (!loc || !route) {
+      setEta('N/A');
+      setAvgSpeed('N/A');
+      return;
+    }
+    let cancelled = false;
     async function fetchEta() {
-      if (location && route) {
-        try {
-          const res = await api.post('/bus-eta', {
-            bus_lat: location.latitude,
-            bus_lon: location.longitude,
-            speed: bus?.speed,
-            route_id: route.id || bus?.route,
-          });
-          if (res.data && typeof res.data.eta_minutes !== 'undefined' && res.data.eta_minutes !== null) {
-            setEta(res.data.eta_minutes + ' min');
-            setAvgSpeed(res.data.used_speed ? res.data.used_speed + ' km/h' : 'N/A');
-          } else {
-            setEta('N/A');
-            setAvgSpeed('N/A');
-          }
-        } catch {
+      try {
+        const routeId = route && ('id' in route ? route.id : undefined) || bus?.route;
+        const res = await api.post('/bus-eta', {
+          bus_lat: loc.latitude,
+          bus_lon: loc.longitude,
+          speed: loc.speed,
+          route_id: routeId,
+        });
+        if (!cancelled && res.data) {
+          setEta(typeof res.data.eta_minutes !== 'undefined' && res.data.eta_minutes !== null ? res.data.eta_minutes + ' min' : 'N/A');
+          setAvgSpeed(res.data.used_speed ? res.data.used_speed + ' km/h' : 'N/A');
+        }
+      } catch {
+        if (!cancelled) {
           setEta('N/A');
           setAvgSpeed('N/A');
         }
-      } else {
-        setEta('N/A');
-        setAvgSpeed('N/A');
       }
     }
     fetchEta();
-  }, [location, route, bus]);
-  const mapRef = useRef<LeafletMap | null>(null);
+    return () => { cancelled = true; };
+  }, [location, fallbackLocation, route, bus]);
 
+  // Fallback: fetch last known location if WebSocket fails
   React.useEffect(() => {
-    let interval: any;
-    const fetchLocation = async () => {
+    if (!wsFailed) return;
+    let cancelled = false;
+    const fetchFallback = async () => {
       try {
         const all = await busLocationAPI.getAllLocations();
         const busLoc = all.find((b: any) => b.id === busId || b.bus_id === busId || b.busNumber === busId);
-        if (busLoc && busLoc.latitude && busLoc.longitude) {
-          setLocation({ latitude: busLoc.latitude, longitude: busLoc.longitude, timestamp: busLoc.timestamp });
-        } else {
-          setLocation(null);
+        if (!cancelled && busLoc && busLoc.latitude && busLoc.longitude) {
+          setFallbackLocation(busLoc);
+          setBusAddress(`${busLoc.latitude}, ${busLoc.longitude}`);
         }
-      } finally {
-  // setLoading(false);
-      }
+      } catch {}
     };
-    fetchLocation();
-    interval = setInterval(fetchLocation, 10000);
-    return () => clearInterval(interval);
-  }, [busId]);
+    fetchFallback();
+    return () => { cancelled = true; };
+  }, [wsFailed, busId]);
 
   // Reverse geocode bus location
   React.useEffect(() => {
     if (location) {
       reverseGeocode(location.latitude, location.longitude).then(addr => setBusAddress(addr || ""));
+    } else if (fallbackLocation) {
+      reverseGeocode(fallbackLocation.latitude, fallbackLocation.longitude).then(addr => setBusAddress(addr || ""));
     } else {
       setBusAddress("");
     }
-  }, [location]);
+  }, [location, fallbackLocation]);
 
   // Determine bus status (not started, en route, reached, etc.)
   React.useEffect(() => {
-    if (!route || !location) {
+    const loc = location || fallbackLocation;
+    if (!route || !loc) {
       setBusStatus("");
       setUpcomingStop("");
       return;
@@ -145,8 +186,8 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c;
     }
-    const startDist = haversine(location.latitude, location.longitude, route.start_latitude, route.start_longitude);
-    const endDist = haversine(location.latitude, location.longitude, route.end_latitude, route.end_longitude);
+    const startDist = haversine(loc.latitude, loc.longitude, route.start_latitude, route.start_longitude);
+    const endDist = haversine(loc.latitude, loc.longitude, route.end_latitude, route.end_longitude);
     const routeDist = haversine(route.start_latitude, route.start_longitude, route.end_latitude, route.end_longitude);
     // If before start
     if (startDist > routeDist && endDist > routeDist) {
@@ -162,12 +203,8 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
       setBusStatus("en_route");
       // Find next stop (if stops available)
       if (route.stops && route.stops.length > 0) {
-        let minDist = Infinity;
         let nextStop = "";
         for (const stop of route.stops) {
-          // For demo, just use string match; in real, stops should have lat/lng
-          // Here, just pick the first not-yet-passed stop
-          // (You can improve this if you have stop coordinates)
           if (!nextStop) nextStop = stop;
         }
         setUpcomingStop(nextStop);
@@ -175,18 +212,20 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
         setUpcomingStop("");
       }
     }
-  }, [route, location]);
+  }, [route, location, fallbackLocation]);
 
   // Auto-focus map on marker when location changes, but fix zoom
   React.useEffect(() => {
-    if (location && mapRef.current) {
-      mapRef.current.setView([location.latitude, location.longitude], 13, { animate: true });
+    const loc = location || fallbackLocation;
+    if (loc && mapRef.current) {
+      mapRef.current.setView([loc.latitude, loc.longitude], 13, { animate: true });
     }
-  }, [location]);
+  }, [location, fallbackLocation]);
 
-  // Calculate map center: prefer bus location, else route start, else default
+  // Calculate map center: prefer bus location, else fallback, else route start, else default
   let mapCenter: [number, number] = DEFAULT_CENTER_LIVE;
   if (location) mapCenter = [location.latitude, location.longitude];
+  else if (fallbackLocation) mapCenter = [fallbackLocation.latitude, fallbackLocation.longitude];
   else if (route) mapCenter = [route.start_latitude, route.start_longitude];
 
   // Polyline for route
@@ -235,12 +274,12 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
             </Marker>
           )}
           {/* Bus marker logic: only show if not reached destination or not before start */}
-          {location && busStatus !== 'reached_destination' && busStatus !== 'not_started' && (
-            <Marker position={[location.latitude, location.longitude]} icon={liveBusIcon}>
+          {(location || fallbackLocation) && busStatus !== 'reached_destination' && busStatus !== 'not_started' && (
+            <Marker position={location ? [location.latitude, location.longitude] : [fallbackLocation.latitude, fallbackLocation.longitude]} icon={liveBusIcon}>
               <Popup>
                 <div style={{ minWidth: 200 }}>
                   <div className="font-bold text-blue-700 text-lg mb-1">{t('livebusmap.bus', 'Bus')} {bus?.number || busId}</div>
-                  <div className="text-xs text-gray-500 mb-2">{t('livebusmap.last_update', 'Last update')}: {location.timestamp ? new Date(location.timestamp).toLocaleTimeString() : t('livebusmap.na', 'N/A')}</div>
+                  <div className="text-xs text-gray-500 mb-2">{t('livebusmap.last_update', 'Last update')}: {location?.timestamp ? new Date(location.timestamp).toLocaleTimeString() : t('livebusmap.na', 'N/A')}</div>
                   <div className="mb-2">
                     <b>{t('livebusmap.route', 'Route')}:</b> {route?.route_name || bus?.route || '-'}
                   </div>
@@ -252,7 +291,10 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
                       <div><b>{t('livebusmap.amenities', 'Amenities')}:</b> {(bus.amenities || []).join(', ')}</div>
                     </>
                   )}
-                  <div className="mt-2 text-xs text-gray-400">Lat: {location.latitude}, Lng: {location.longitude}</div>
+                  <div className="mt-2 text-xs text-gray-400">Lat: {location ? location.latitude : fallbackLocation.latitude}, Lng: {location ? location.longitude : fallbackLocation.longitude}</div>
+                  {wsFailed && fallbackLocation && (
+                    <div className="text-red-500 font-semibold mt-2">{t('livebusmap.driver_not_sharing', 'Driver is not started sharing location yet')}</div>
+                  )}
                 </div>
               </Popup>
             </Marker>
@@ -315,7 +357,7 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
                 <svg xmlns='http://www.w3.org/2000/svg' className='w-4 h-4 text-indigo-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7'/></svg>
                 Driver
               </span>
-              <span className="text-base font-semibold text-gray-800">{bus?.driver?.name || 'N/A'}</span>
+              <span className="text-base font-semibold text-gray-800">{driverName}</span>
             </div>
           </div>
           <div className="w-full flex flex-row gap-8 items-center justify-center mt-2">
