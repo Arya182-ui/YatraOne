@@ -69,6 +69,7 @@ export function useEtaCardData(bus: any, route: any) {
     if (loc && loc.latitude && loc.longitude) {
       reverseGeocodeAPI.getAddress(loc.latitude, loc.longitude)
         .then(data => {
+          console.log('Reverse geocode response:', data);
           if (data.address) {
             const name = data.address.bus_station || data.address.suburb || data.address.town || data.address.city || data.address.village || "";
             let district = data.address.county || data.address.state_district || "";
@@ -80,7 +81,10 @@ export function useEtaCardData(bus: any, route: any) {
             setBusAddress(data.display_name || `${loc.latitude}, ${loc.longitude}`);
           }
         })
-        .catch(() => setBusAddress(`${loc.latitude}, ${loc.longitude}`));
+        .catch((err) => {
+          console.error('Reverse geocode error:', err);
+          setBusAddress(`${loc.latitude}, ${loc.longitude}`);
+        });
     } else {
       setBusAddress("");
     }

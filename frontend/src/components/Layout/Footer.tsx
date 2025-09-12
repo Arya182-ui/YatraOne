@@ -16,7 +16,7 @@ const Footer: React.FC = () => {
               <img src="/logo.png" alt="YatraOne Logo" className="h-10 mb-1" />
             </div>
             <p className="text-gray-300 mb-6 max-w-md">
-              {t('Revolutionizing public transportation with smart technology, real-time tracking, and user-centric features for a better commuting experience.')}
+              {t('footer.desc', 'Revolutionizing public transportation with smart technology, real-time tracking, and user-centric features for a better commuting experience.')}
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
@@ -33,31 +33,31 @@ const Footer: React.FC = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">{t('Quick Links')}</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('footer.quick_links', 'Quick Links')}</h3>
             <ul className="space-y-2">
               <li>
                 <Link to="/tracking" className="text-gray-300 hover:text-white transition-colors">
-                  {t('Bus Tracking')}
+                  {t('nav.tracking', 'Bus Tracking')}
                 </Link>
               </li>
               <li>
                 <Link to="/feedback" className="text-gray-300 hover:text-white transition-colors">
-                  {t('Feedback')}
+                  {t('nav.feedback', 'Feedback')}
                 </Link>
               </li>
               <li>
                 <Link to="/lost-found" className="text-gray-300 hover:text-white transition-colors">
-                  {t('Lost & Found')}
+                  {t('nav.lostfound', 'Lost & Found')}
                 </Link>
               </li>
               <li>
                 <Link to="/rewards" className="text-gray-300 hover:text-white transition-colors">
-                  {t('Rewards')}
+                  {t('nav.rewards', 'Rewards')}
                 </Link>
               </li>
               <li>
                 <Link to="/contact" className="text-gray-300 hover:text-white transition-colors">
-                  {t('Contact')}
+                  {t('footer.contact', 'Contact')}
                 </Link>
               </li>
             </ul>
@@ -65,7 +65,7 @@ const Footer: React.FC = () => {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">{t('Contact Us')}</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('footer.contact_us', 'Contact Us')}</h3>
             <ul className="space-y-3">
               <li className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-blue-400" />
@@ -84,21 +84,21 @@ const Footer: React.FC = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400 text-sm">
-            © 2024 {t('Smart Bus Platform')}. {t('All rights reserved.')}
-          </p>
+            <p className="text-gray-400 text-sm">
+              © 2024 {t('footer.copyright_brand', 'Smart Bus Platform')}. {t('footer.copyright', 'All rights reserved.')}
+            </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link to="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm">
-              {t('Privacy Policy')}
+              {t('footer.privacy_policy', 'Privacy Policy')}
             </Link>
             <Link to="/about" className="text-gray-400 hover:text-white transition-colors text-sm">
-              {t('About Us')}
+              {t('footer.about_us', 'About Us')}
             </Link>
             <Link to="/faq" className="text-gray-400 hover:text-white transition-colors text-sm">
-              {t('FAQ')}
+              {t('footer.faq', 'FAQ')}
             </Link>
             <Link to="/contact" className="text-gray-400 hover:text-white transition-colors text-sm">
-              {t('Contact Us')}
+              {t('footer.contact_us', 'Contact Us')}
             </Link>
           </div>
         </div>

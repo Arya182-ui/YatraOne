@@ -1,6 +1,6 @@
 // BusTrackingDashboard.tsx
 // New dashboard layout as per requirements
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
@@ -111,6 +111,26 @@ const BusTrackingDashboard: React.FC = () => {
 
   // --- ETA Card Data for mobile ---
   const etaCardData = useEtaCardData(selectedBus, selectedRoute);
+
+  // WebSocket for live bus location
+  const ws = useRef<WebSocket | null>(null);
+  useEffect(() => {
+    if (!selectedBusId) return;
+    ws.current = new WebSocket(`ws://localhost:8000/ws/bus-location/${selectedBusId}`);
+
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      // Update your map marker or state here
+      console.log("Location update:", data);
+      // Optionally, you can fetch the updated bus data and update the state
+      // busAPI.getBuses().then(updatedBuses => setBuses(updatedBuses));
+    };
+
+    return () => {
+      ws.current && ws.current.close();
+    };
+  }, [selectedBusId]);
+
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-blue-50 via-purple-100 to-pink-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900">

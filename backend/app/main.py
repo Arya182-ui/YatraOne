@@ -33,13 +33,17 @@ from app.routes import (
     sos,
     notifications,
 )
+from app.routes import sms_webhook
 from app.routes import driver_status, timetable, driver_auth, bus_locations_realtime_update
 from app.routes.otp import start_cleanup_task
 from app.firebase import firestore_db, realtime_db
+from app.routes import bus_location_ws
+from app.routes import open_data
 
 # ---------------------------------------------------------------------
 # Suppress noisy logs and CancelledError tracebacks
 # ---------------------------------------------------------------------
+
 logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
 logging.getLogger("uvicorn.access").setLevel(logging.INFO)
 
@@ -78,7 +82,6 @@ try:
 except ImportError:
     try:
         from brotli_asgi import BrotliMiddleware
-
         app.add_middleware(
             BrotliMiddleware,
             quality=5,
@@ -154,6 +157,9 @@ app.include_router(batch_upload.router, prefix="/api", tags=["batch-upload"])
 app.include_router(user_dashboard_analytics.router, prefix="/api", tags=["user-dashboard-analytics"])
 app.include_router(sos.router, prefix="/api", tags=["sos", "incident"])
 app.include_router(driver_status.router, prefix="/api/drivers", tags=["drivers"])
+app.include_router(bus_location_ws.router)
+app.include_router(open_data.router, prefix="/api")
+app.include_router(sms_webhook.router, prefix="/api", tags=["sms-webhook"])
 
 # ---------------------------------------------------------------------
 # Utility: Dashboard analytics

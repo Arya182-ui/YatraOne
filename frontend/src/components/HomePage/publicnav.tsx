@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
+
 import Logo from '/logo.png';
 import LanguageSelector from '../Layout/LanguageSelector';
+import { useTranslation } from 'react-i18next';
 
 function HeroNav() {
+    const { t } = useTranslation();
     return (
         <nav className="bg-white/80 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-50 shadow-lg rounded-b-2xl mb-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
@@ -16,13 +19,13 @@ function HeroNav() {
                             to="/register"
                             className="px-5 py-2 rounded-xl text-blue-700 font-semibold bg-blue-50 hover:bg-blue-100 transition-all shadow-sm border border-blue-100"
                         >
-                            Sign up
+                            {t('publicnav.signup', 'Sign up')}
                         </Link>
                         <Link
                             to="/login"
                             className="px-5 py-2 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg hover:from-blue-700 hover:to-emerald-700 transition-all border-0"
                         >
-                            Get Started
+                            {t('publicnav.get_started', 'Get Started')}
                         </Link>
                     </div>
                 </div>

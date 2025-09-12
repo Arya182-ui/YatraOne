@@ -1,0 +1,74 @@
+{
+  "reward": {
+    "points_title": "Your Reward Points",
+    "earn_points_hint": "Earn points by reporting Lost & Found, commenting, or using the app more!",
+    "more_coming_soon": "More games and rewards coming soon!",
+    "card_title": "Rewards",
+    "card_subtitle": "Earn & Redeem Points",
+    "card_hint": "Check your points and earn more by using the app!",
+    "card_cta": "View Rewards"
+  },
+  "hero": {
+    "brand_title": "YatraOne",
+    "brand_subtitle": "Smart, Safe & Rewarding Bus Journeys",
+    "brand_desc": "Experience India’s next-gen transit platform:",
+    "brand_live_tracking": "Live Tracking",
+    "brand_sos_safety": "SOS Safety",
+    "brand_smart_analytics": "Smart Analytics",
+    "brand_and": "and",
+    "brand_rewards": "Rewards",
+    "cta_dashboard": "Go to Dashboard",
+    "cta_get_started": "Get Started Free",
+    "feature_cloud_synced": "Cloud-synced and real-time updates",
+    "feature_smart_city": "Seamless integration with smart city systems",
+    "feature_scalable": "Scalable, secure, and commuter-friendly",
+    "timetable_title": "Bus Timetable",
+    "timetable_desc": "Download or preview the latest bus schedule for your route. Stay on time, every time!",
+    "download_timetable": "Download Timetable",
+    "view_timetable": "View Timetable"
+  },
+  "footer": {
+    "brand_title": "YatraOne",
+    "brand_desc": "Smart, safe & rewarding bus journeys for the future of public transit. We connect cities and communities efficiently.",
+    "quick_links": "Quick Links",
+    "about_us": "About Us",
+    "contact": "Contact",
+    "privacy_policy": "Privacy Policy",
+    "faq": "FAQ",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "follow_us": "Follow Us",
+    "copyright": "Smart Transit. All rights reserved.",
+    "desc": "Revolutionizing public transportation with smart technology, real-time tracking, and user-centric features for a better commuting experience.",
+    "contact_us": "Contact Us",
+    "copyright_brand": "Smart Bus Platform"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "tracking": "Bus Tracking",
+    "feedback": "Feedback",
+    "lostfound": "Lost & Found",
+    "rewards": "Rewards",
+    "analytics": "Analytics",
+    "users": "Users",
+    "batchupload": "Batch Upload",
+    "profile": "Profile",
+    "adminpanel": "Admin Panel",
+    "signout": "Sign Out"
+  },
+  "publicnav": {
+    "signup": "Sign up",
+    "get_started": "Get Started"
+  },
+  "publicfooter": {
+    "copyright_brand": "Smart Transit",
+    "copyright": "All rights reserved.",
+    "about": "About",
+    "contact": "Contact",
+    "privacy": "Privacy"
+  },
+  "common": {
+    "loading": "Loading..."
+  }
+}

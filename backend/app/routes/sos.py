@@ -36,7 +36,7 @@ async def send_sos(sos: SOSRequest):
     # Email to admin
     try:
         send_template_email(
-            to_email="admin@yatraone.com",  # Replace with real admin email or list
+            to_email="arya119000@gmail.com",  # Replace with real admin email or list
             subject="SOS Alert Received!",
             template_name="sos_admin.html",
             context={
@@ -100,7 +100,7 @@ async def report_incident(
     # Email to admin
     try:
         send_template_email(
-            to_email="admin@yatraone.com",  # Replace with real admin email or list
+            to_email="arya119000@gmail.com",  # Replace with real admin email or list
             subject="Incident Report Submitted",
             template_name="incident_report_admin.html",
             context={

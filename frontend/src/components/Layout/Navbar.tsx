@@ -31,19 +31,19 @@ const Navbar: React.FC = () => {
 
   const { t } = useTranslation();
   const userNavItems = [
-  { path: '/dashboard', icon: Home, label: t('nav.dashboard', 'Dashboard') },
-  { path: '/tracking', icon: MapPin, label: t('nav.tracking', 'Bus Tracking') },
-  { path: '/feedback', icon: MessageSquare, label: t('nav.feedback', 'Feedback') },
-  { path: '/lost-found', icon: Package, label: t('nav.lostfound', 'Lost & Found') },
-  { path: '/rewards', icon: Award, label: t('nav.rewards', 'Rewards') },
+    { path: '/dashboard', icon: Home, label: t('nav.dashboard', 'Dashboard') },
+    { path: '/tracking', icon: MapPin, label: t('nav.tracking', 'Bus Tracking') },
+    { path: '/feedback', icon: MessageSquare, label: t('nav.feedback', 'Feedback') },
+    { path: '/lost-found', icon: Package, label: t('nav.lostfound', 'Lost & Found') },
+    { path: '/rewards', icon: Award, label: t('nav.rewards', 'Rewards') },
   ];
 
   const adminNavItems = [
-  { path: '/admin', icon: BarChart3, label: t('nav.analytics', 'Analytics') },
-  { path: '/admin/users', icon: Users, label: t('nav.users', 'Users') },
-  { path: '/admin/feedback', icon: MessageSquare, label: t('nav.feedback', 'Feedback') },
-  { path: '/admin/lost-found', icon: Package, label: t('nav.lostfound', 'Lost & Found') },
-  { path: '/admin/batch-upload', icon: Upload, label: t('nav.batchupload', 'Batch Upload') },
+    { path: '/admin', icon: BarChart3, label: t('nav.analytics', 'Analytics') },
+    { path: '/admin/users', icon: Users, label: t('nav.users', 'Users') },
+    { path: '/admin/feedback', icon: MessageSquare, label: t('nav.feedback', 'Feedback') },
+    { path: '/admin/lost-found', icon: Package, label: t('nav.lostfound', 'Lost & Found') },
+    { path: '/admin/batch-upload', icon: Upload, label: t('nav.batchupload', 'Batch Upload') },
   ];
 
   const navItems = user?.role === 'admin' ? adminNavItems : userNavItems;
