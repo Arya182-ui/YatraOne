@@ -1,0 +1,28 @@
+﻿
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : [{"busNumber":"BUS101","device_secret":"Arya@119","route
+                    ":"Campus to City Center","status":"active","routeId":"v
+                    wYOsTULcUL1z9DQOS1r","driver":{"phone":"9876543210","nam
+                    e":"Ramesh Kumar"},"driverId":"u...
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 230
+                    Content-Type: application/json
+                    Date: Fri, 05 Sep 2025 23:05:49 GMT
+                    Server: uvicorn
+                    
+                    [{"busNumber":"BUS101","device_secret":"Arya@119","route
+                    ":"Campus to City ...
+Forms             : {}
+Headers           : {[Content-Length, 230], [Content-Type, 
+                    application/json], [Date, Fri, 05 Sep 2025 23:05:49 
+                    GMT], [Server, uvicorn]}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 230
+
+
+

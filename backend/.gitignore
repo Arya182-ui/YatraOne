@@ -1,0 +1,15 @@
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore environment files
+.env
+.env.*
+
+# Ignore logs
+*.log
+
+# Ignore service account keys and secrets
+serviceAccountKey.json

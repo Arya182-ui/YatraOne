@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to YatraOne Public Transport</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7fa; color: #222; margin: 0; }
+    .container { max-width: 480px; margin: 32px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px #b6c2d6; padding: 32px; }
+    .logo { display: flex; align-items: center; margin-bottom: 24px; }
+    .logo img { height: 32px; margin-right: 12px; }
+    .header { font-size: 24px; color: #22c55e; font-weight: 700; margin-bottom: 16px; }
+    .message { margin: 20px 0; font-size: 16px; line-height: 1.6; }
+    .cta { display: block; width: fit-content; margin: 24px auto 0; background: #22c55e; color: #fff; text-decoration: none; font-weight: 500; padding: 12px 32px; border-radius: 8px; box-shadow: 0 2px 8px #bbf7d0; transition: background 0.2s; }
+    .cta:hover { background: #16a34a; }
+    .footer { font-size: 13px; color: #64748b; margin-top: 32px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="https://i.postimg.cc/3wYcxwqf/YatraOne.png" alt="YatraOne Logo" height="32" style="margin-right:12px;">
+    </div>
+    <div class="header">Welcome to YatraOne Public Transport!</div>
+    <div class="message">
+      Hi {{name}},<br><br>
+      Your registration is successful.<br>
+      You can now track buses, submit feedback, and help improve public transport.<br><br>
+      <b>Login Email:</b> {{email}}<br>
+    </div>
+    <a class="cta" href="https://your-YatraOne-demo-url.com">Visit Dashboard</a>
+    <div class="footer">
+      &copy; 2025 YatraOne Transport &mdash; All rights reserved.<br>
+    </div>
+  </div>
+</body>
+</html>

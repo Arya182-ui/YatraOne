@@ -1,0 +1,26 @@
+name: driver_app
+version: 1.0.0+1
+description: SIH Driver App for bus location updates
+publish_to: 'none'
+
+environment:
+  sdk: '>=2.17.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0                       # For API calls
+  provider: ^6.0.0                   # For state management
+  geolocator: ^14.0.2                # For location services
+  shared_preferences: ^2.0.15        # For local storage (session, tokens)
+  flutter_local_notifications: ^19.4.1 # For notifications
+  cupertino_icons: ^1.0.2            # iOS style icons
+  url_launcher: ^6.2.5
+
+dev_dependencies:
+  flutter_lints: ^6.0.0              # Upgraded lints to latest
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

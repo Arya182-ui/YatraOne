@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+firebase-admin
+pydantic
+python-multipart
+bcrypt
+starlette-compress
+brotli-asgi
+brotli
+requests

@@ -1,0 +1,38 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Gurmukhi:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Modern input style for Lost & Found and other forms */
+.input-modern {
+	@apply px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-900 transition-colors w-full shadow-sm placeholder-gray-400 dark:placeholder-gray-500;
+}
+
+
+
+html {
+	font-size: var(--app-font-size, 16px);
+	font-family: 'Noto Sans', Arial, sans-serif;
+}
+body {
+	font-size: var(--app-font-size, 16px);
+	font-family: 'Noto Sans', Arial, sans-serif;
+}
+
+/* Unicode font support for Hindi and Punjabi */
+[lang="hi"], .lang-hi, .font-hindi {
+	font-family: 'Noto Sans Devanagari', 'Noto Sans', Arial, sans-serif !important;
+}
+[lang="pa"], .lang-pa, .font-punjabi {
+	font-family: 'Noto Sans Gurmukhi', 'Noto Sans', Arial, sans-serif !important;
+}
+
+/* Font size utilities for accessibility */
+.font-size-small { font-size: 14px !important; }
+.font-size-medium { font-size: 16px !important; }
+.font-size-large { font-size: 18px !important; }
+.font-size-xlarge { font-size: 20px !important; }
+
+
