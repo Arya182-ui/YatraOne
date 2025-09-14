@@ -27,17 +27,18 @@ A modern, secure, and scalable public transport management platform. Features in
 ## 🏗️ Architecture
 ```mermaid
 graph TD
-  subgraph Frontend (Vercel)
+  subgraph "Frontend (Vercel)"
     A[React + TS SPA + PWA + React Query]
     A -->|REST| B
   end
-  subgraph Backend (Render)
+  subgraph "Backend (Render)"
     B[FastAPI + CSRF + CORS]
     B -->|Firebase SDK| C[Firebase]
     B -->|DB| D[Postgres/Firestore]
   end
   A -.->|HTTPS| B
   B -->|Email/SMS| E[SMTP/3rd Party]
+
 ```
 
 
