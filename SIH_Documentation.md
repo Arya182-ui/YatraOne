@@ -163,7 +163,6 @@ We propose a cloud-native, GPS-based real-time bus tracking system with a low-ba
 
 ### Dataset Links
 - [Open Government Data Platform India](https://data.gov.in/)
-- [Sample Bus GPS Data](#) *(add link if available)*
 
 ### GitHub Repository
 - [https://github.com/yourteam/yourproject](https://github.com/Arya182-ui/YatraOne/tree/main)
