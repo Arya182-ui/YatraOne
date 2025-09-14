@@ -1,8 +1,11 @@
 # YatraOne (Smart Bus Platform)
 
-![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/your-repo/ci.yml?branch=main)
-![License](https://img.shields.io/github/license/your-org/your-repo)
-![Coverage](https://img.shields.io/codecov/c/github/your-org/your-repo)
+![Repo Size](https://img.shields.io/github/repo-size/Arya182-ui/YatraOne)
+![Last Commit](https://img.shields.io/github/last-commit/Arya182-ui/YatraOne)
+![Issues](https://img.shields.io/github/issues/Arya182-ui/YatraOne)
+![Pull Requests](https://img.shields.io/github/issues-pr/Arya182-ui/YatraOne)
+![Contributors](https://img.shields.io/github/contributors/Arya182-ui/YatraOne)
+
 
 ---
 
