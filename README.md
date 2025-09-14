@@ -1,4 +1,4 @@
-# Smart Bus Platform
+# YatraOne (Smart Bus Platform)
 
 ![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/your-repo/ci.yml?branch=main)
 ![License](https://img.shields.io/github/license/your-org/your-repo)
