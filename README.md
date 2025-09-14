@@ -64,8 +64,8 @@ graph TD
 ## 🚀 Setup Guide
 ### 1. Clone & Install
 ```sh
-git clone https://github.com/your-org/your-repo.git
-cd your-repo
+git clone https://github.com/Arya182-ui/YatraOne.git
+cd YatraOne
 ```
 
 ### 2. Environment Variables
