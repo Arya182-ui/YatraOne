@@ -141,14 +141,14 @@ graph TD
   A[User] -->|register/login| B[FastAPI]
   B -->|OTP| C[Firebase]
   B -->|JWT| D[Client]
-  D -->|refresh (CSRF)| B
-  B -->|blacklist| E[Redis/DB]
+  D -->|"refresh CSRF"| B
+  B -->|blacklist| E["Redis / DB"]
 ```
 
 ### Data Flow
 ```mermaid
 graph TD
-  Client -->|REST| FastAPI -->|ORM/SDK| DB/Firebase
+  Client[Client] -->|REST| FastAPI[FastAPI] -->|ORM/SDK| DB_Firebase["DB / Firebase"]
 ```
 
 ## SIH Documentation
