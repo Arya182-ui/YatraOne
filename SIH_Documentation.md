@@ -8,10 +8,9 @@
 **Real-Time Public Transport Tracking for Small Cities**
 
 **Problem Statement ID:** 25013  
-**Team Name:** [Your Team Name]  
-**Team Members:** [Member 1, Member 2, ...]  
-**College:** [Your College Name]  
-**Mentor:** [Mentor Name]
+**Team Name:** DreammΞrs   
+**Team Members:** Ayush Gangwar , Subod Singh , Neha Gangwar , Anshika Tripathi , Jatin Sharma , Rinku Gangwar
+**College:** Invertis University , Bareilly
 
 ---
 
@@ -167,7 +166,7 @@ We propose a cloud-native, GPS-based real-time bus tracking system with a low-ba
 - [Sample Bus GPS Data](#) *(add link if available)*
 
 ### GitHub Repository
-- [https://github.com/yourteam/yourproject](https://github.com/Arya182-ui/YatraOne/main/) *(replace with actual repo)*
+- [https://github.com/yourteam/yourproject](https://github.com/Arya182-ui/YatraOne/tree/main)
 
 ---
 
