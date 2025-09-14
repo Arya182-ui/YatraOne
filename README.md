@@ -6,6 +6,12 @@
 ![Pull Requests](https://img.shields.io/github/issues-pr/Arya182-ui/YatraOne)
 ![Contributors](https://img.shields.io/github/contributors/Arya182-ui/YatraOne)
 
+![Made with Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
+![Made with React](https://img.shields.io/badge/React-18-blue?logo=react)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green?logo=fastapi)
+![Firebase](https://img.shields.io/badge/Firebase-cloud-orange?logo=firebase)
+
+
 
 ---
 
