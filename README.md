@@ -127,4 +127,39 @@ npm run dev
 
 
 ## 📊 Architecture Diagram
-See above (Mermaid.js). For more, see backend/frontend docs and SIH_Documentation.md.
+```mermaid
+graph TD
+  %% Frontend
+  subgraph "Frontend (Vercel)"
+    A[React + TS + Tailwind + Vite + PWA + React Query]
+  end
+
+  %% Driver App
+  subgraph "Driver App (Mobile)"
+    DApp[Driver App: Login, Status, Location Updates]
+  end
+
+  %% Backend
+  subgraph "Backend (Render)"
+    B[FastAPI + CSRF + CORS + JWT + OTP]
+    B -->|Firebase SDK| C[Firebase Services]
+    B -->|ORM/SDK| DB[Postgres / Firestore]
+    B -->|Blacklist Tokens| R[Redis]
+    B -->|Email/SMS| E[SMTP / 3rd Party]
+  end
+
+  %% Monitoring
+  subgraph "Monitoring & CI/CD"
+    M[Sentry / Prometheus]
+    CI[GitHub Actions + Vercel + Render]
+  end
+
+  %% Connections
+  A -->|REST API| B
+  DApp -->|JWT + REST| B
+  A -.->|HTTPS| B
+  DApp -.->|HTTPS| B
+  B --> M
+  CI --> A
+  CI --> B
+```
