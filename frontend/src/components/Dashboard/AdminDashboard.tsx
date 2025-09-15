@@ -278,37 +278,33 @@ const AdminDashboard: React.FC = () => {
             {quickActions.map((action, index) => {
               const Icon = action.icon;
               return (
-                <Link
+                <motion.div
                   key={index}
-                  to={action.path}
-                  className="group"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-all duration-200"
+                  onClick={() => window.location.assign(action.path)}
                 >
-                  <motion.div
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-all duration-200"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`p-3 rounded-lg bg-${action.color}-100 dark:bg-${action.color}-900/30`}>
-                        <Icon className={`w-6 h-6 text-${action.color}-600 dark:text-${action.color}-400`} />
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                          {typeof action.count === 'string' ? action.count : action.count.toLocaleString()}
-                        </p>
-                        {typeof action.count === 'number' && action.count > 0 && (
-                          <div className="w-2 h-2 bg-red-500 rounded-full ml-auto"></div>
-                        )}
-                      </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`p-3 rounded-lg bg-${action.color}-100 dark:bg-${action.color}-900/30`}>
+                      <Icon className={`w-6 h-6 text-${action.color}-600 dark:text-${action.color}-400`} />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      {action.title}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">
-                      {action.description}
-                    </p>
-                  </motion.div>
-                </Link>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {typeof action.count === 'string' ? action.count : action.count.toLocaleString()}
+                      </p>
+                      {typeof action.count === 'number' && action.count > 0 && (
+                        <div className="w-2 h-2 bg-red-500 rounded-full ml-auto"></div>
+                      )}
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    {action.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    {action.description}
+                  </p>
+                </motion.div>
               );
             })}
           </div>

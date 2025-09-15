@@ -34,9 +34,11 @@ manager = ConnectionManager()
 @router.websocket("/ws/bus-location/{bus_id}")
 async def bus_location_ws(websocket: WebSocket, bus_id: str):
     await manager.connect(bus_id, websocket)
+    print(f"[WS] Connected: bus_id={bus_id}")
     try:
         while True:
             msg = await websocket.receive_text()
+            print(f"[WS] Received from {bus_id}: {msg}")
             try:
                 data = json.loads(msg)
                 # Validate required fields
@@ -46,6 +48,7 @@ async def bus_location_ws(websocket: WebSocket, bus_id: str):
                 driver_id = data.get('driver_id')
                 timestamp = data.get('timestamp') or datetime.utcnow().isoformat()
                 if lat is None or lon is None or speed is None or driver_id is None:
+                    print(f"[WS] Invalid data from {bus_id}: {data}")
                     continue  # skip invalid
                 # Update Firebase Realtime DB
                 loc_data = {
@@ -55,11 +58,13 @@ async def bus_location_ws(websocket: WebSocket, bus_id: str):
                     'speed': speed,
                     'timestamp': timestamp,
                 }
+                print(f"[WS] Updating Firebase for {bus_id}: {loc_data}")
                 realtime_db.child('bus_locations').child(bus_id).set(loc_data)
                 # Broadcast to all clients
                 await manager.broadcast(bus_id, loc_data)
             except Exception as e:
-                # Optionally log error
+                print(f"[WS] Error processing message for {bus_id}: {e}")
                 continue
     except WebSocketDisconnect:
+        print(f"[WS] Disconnected: bus_id={bus_id}")
         manager.disconnect(bus_id, websocket)

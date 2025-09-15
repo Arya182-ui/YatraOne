@@ -92,9 +92,15 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
     fetchDriver();
   }, [bus]);
   const { t } = useTranslation();
-  const wsUrlBase = import.meta.env.VITE_BACKEND_WS_URL || 'http://localhost:8000';
+  const useLocal = false; // true = local, false = Render
+  const localIp = '192.168.1.5'; // Change to your PC's IP
+  const localPort = 8000;
+  const localWsUrl = `ws://${localIp}:${localPort}`;
+  const renderWsUrl = 'wss://yatraone-backend.onrender.com/api';
+  const wsUrlBase = useLocal ? localWsUrl : renderWsUrl;
   const [wsFailed, setWsFailed] = React.useState(false);
   const [fallbackLocation, setFallbackLocation] = React.useState<any>(null);
+  console.log('[LiveBusMap] wsUrlBase:', wsUrlBase, 'busId:', busId);
   const location = useBusLocationWebSocket(busId, wsUrlBase, {
     onError: () => setWsFailed(true)
   });
@@ -407,7 +413,7 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
                 <svg xmlns='http://www.w3.org/2000/svg' className='w-4 h-4 text-indigo-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 11c0-1.104.896-2 2-2s2 .896 2 2-.896 2-2 2-2-.896-2-2z'/></svg>
                 Tracking
               </span>
-              <span className="text-base font-semibold text-gray-800 text-center">{busAddress || '-'}</span>
+              <span className="text-base font-semibold text-gray-800 text-center">{typeof busAddress === 'string' ? busAddress : '-'}</span>
             </div>
           </div>
         </div>

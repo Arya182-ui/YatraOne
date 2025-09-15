@@ -1,3 +1,4 @@
+
 from app.email_utils import send_otp_email
 import random
 import time
@@ -37,6 +38,24 @@ def update_user_profile(user_id: str, profile: UserProfileUpdate = Body(...)):
         raise HTTPException(status_code=400, detail="No valid fields to update")
     user_ref.update(update_data)
     return {"success": True}
+
+
+@router.get("/users/{user_id}")
+def get_user_by_id(user_id: str):
+    """
+    Retrieve a single user by their ID.
+    Args:
+        user_id (str): User ID to fetch.
+    Returns:
+        dict: User data if found.
+    """
+    doc_ref = firestore_db.collection('users').document(user_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+    user = doc.to_dict()
+    user['id'] = doc.id
+    return user
 
 @router.post("/users/{user_id}/delete-account/send-otp")
 def send_delete_account_otp(user_id: str):

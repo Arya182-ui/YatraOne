@@ -50,6 +50,7 @@ const MobileBusMap: React.FC<MobileBusMapProps> = ({ busId, route, bus, defaultZ
   const wsUrlBase = import.meta.env.VITE_BACKEND_WS_URL || 'http://localhost:8000';
   const [wsFailed, setWsFailed] = useState(false);
   const [fallbackLocation, setFallbackLocation] = useState<any>(null);
+  console.log('[MobileBusMap] wsUrlBase:', wsUrlBase, 'busId:', busId);
   const busLocation = useBusLocationWebSocket(busId, wsUrlBase, {
     onError: () => setWsFailed(true)
   });

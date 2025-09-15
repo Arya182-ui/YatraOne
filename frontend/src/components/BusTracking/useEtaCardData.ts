@@ -13,7 +13,7 @@ export function useEtaCardData(bus: any, route: any) {
 
   // Fetch live location for selected bus
   useEffect(() => {
-    if (!bus || !bus.busNumber) {
+    if (!bus || !bus.id) {
       setLiveLocation(null);
       return;
     }
@@ -21,7 +21,7 @@ export function useEtaCardData(bus: any, route: any) {
     async function fetchLive() {
       try {
         const all = await busLocationAPI.getAllLocations();
-        const found = all.find((b: any) => b.id === bus.busNumber || b.bus_id === bus.busNumber || b.busNumber === bus.busNumber);
+        const found = all.find((b: any) => b.id === bus.id || b.bus_id === bus.id);
         if (!cancelled) setLiveLocation(found || null);
       } catch {
         if (!cancelled) setLiveLocation(null);

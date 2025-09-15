@@ -6,6 +6,23 @@ from app.utils.notifications import push_notification
 
 router = APIRouter()
 
+@router.get("/buses/{bus_id}")
+def get_bus_by_id(bus_id: str):
+    """
+    Retrieve a single bus by its ID.
+    Args:
+        bus_id (str): Bus ID to fetch.
+    Returns:
+        dict: Bus data if found.
+    """
+    doc_ref = firestore_db.collection('buses').document(bus_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Bus not found")
+    bus = doc.to_dict()
+    bus['id'] = doc.id
+    return bus
+
 @router.get("/buses")
 def get_buses():
     """

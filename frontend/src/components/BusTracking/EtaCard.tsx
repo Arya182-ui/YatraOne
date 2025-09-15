@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 interface EtaCardProps {
   eta: string;
-  busNumber: string;
+  busNumber: string; // for display only
+  busId: string; // document ID for lookups
   nextStop: string;
   location: string;
   status: string;
@@ -14,15 +15,16 @@ interface EtaCardProps {
   lastUpdate?: string;
 }
 
-const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, status, driverName, avgSpeed, isLive, lastUpdate }) => {
+const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, busId, nextStop, location, status, driverName, avgSpeed, isLive, lastUpdate }) => {
   // --- Offline cache logic ---
-  const CACHE_KEY = `etacard_last_${busNumber}`;
+  const CACHE_KEY = `etacard_last_${busId}`;
+  
   // Save to cache whenever eta/location updates (and online)
   React.useEffect(() => {
     if (navigator.onLine && eta && location) {
       localStorage.setItem(CACHE_KEY, JSON.stringify({ eta, location, nextStop, status, driverName, avgSpeed, lastUpdate }));
     }
-  }, [eta, location, nextStop, status, driverName, avgSpeed, lastUpdate, busNumber]);
+  }, [eta, location, nextStop, status, driverName, avgSpeed, lastUpdate, busId]);
 
   // If offline, load from cache
   const [offlineData, setOfflineData] = React.useState<any>(null);
@@ -43,7 +45,7 @@ const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, s
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('online', handleOnline);
     };
-  }, [busNumber]);
+  }, [busId]);
   const { t } = useTranslation();
   const [resolvedDriverName, setResolvedDriverName] = React.useState(driverName || t('eta_card.na', 'N/A'));
   const [resolvedEta, setResolvedEta] = React.useState(eta);
@@ -56,9 +58,13 @@ const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, s
         setResolvedDriverName(driverName);
         return;
       }
-      // Try to get driverId from busNumber (assuming busNumber is unique and can be mapped)
+      // Use busId directly for lookups
+      if (!busId) {
+        setResolvedDriverName(t('eta_card.na', 'N/A'));
+        return;
+      }
       try {
-        const busRes = await api.get(`/buses/${busNumber}`);
+        const busRes = await api.get(`/buses/${busId}`);
         const busData = busRes.data;
         if (busData?.driver && busData.driver.name) {
           setResolvedDriverName(busData.driver.name);
@@ -80,7 +86,7 @@ const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, s
       }
     }
     fetchDriver();
-  }, [driverName, busNumber, t]);
+  }, [driverName, busId, t]);
 
   // Fetch ETA and avgSpeed if not provided
   React.useEffect(() => {
@@ -90,9 +96,14 @@ const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, s
         setResolvedAvgSpeed(avgSpeed);
         return;
       }
-      // Try to get bus location and route from busNumber
+      // Use busId directly for lookups
+      if (!busId) {
+        setResolvedEta('N/A');
+        setResolvedAvgSpeed('N/A');
+        return;
+      }
       try {
-        const busRes = await api.get(`/buses/${busNumber}`);
+        const busRes = await api.get(`/buses/${busId}`);
         const busData = busRes.data;
         if (busData && busData.currentLocation && busData.route) {
           const res = await api.post('/bus-eta', {
@@ -118,7 +129,7 @@ const EtaCard: React.FC<EtaCardProps> = ({ eta, busNumber, nextStop, location, s
       }
     }
     fetchEta();
-  }, [eta, avgSpeed, busNumber]);
+  }, [eta, avgSpeed, busId]);
 
   // Prefer live props, then offline cache
   const showData = navigator.onLine || !offlineData ? { eta: resolvedEta, busNumber, nextStop, location, status, driverName: resolvedDriverName, avgSpeed: resolvedAvgSpeed, lastUpdate, isOffline: false } : { ...offlineData, isOffline: true };

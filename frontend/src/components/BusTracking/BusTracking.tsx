@@ -92,10 +92,10 @@ const BusTrackingDashboard: React.FC = () => {
   });
 
   // Selected route and bus
-  const selectedRoute = routes.find(r => r.id === (selectedRouteId !== 'all' ? selectedRouteId : (buses.find(b => b.busNumber === selectedBusId)?.routeIds?.[0] || ''))) || null;
+  const selectedRoute = routes.find(r => r.id === (selectedRouteId !== 'all' ? selectedRouteId : (buses.find(b => b.id === selectedBusId)?.routeIds?.[0] || ''))) || null;
   // Only allow selecting a bus if a route is selected
   const busesForSelectedRoute = selectedRouteId !== 'all' ? buses.filter(b => b.routeIds && b.routeIds.includes(selectedRouteId)) : [];
-  const selectedBus = buses.find(b => b.busNumber === selectedBusId) || null;
+  const selectedBus = buses.find(b => b.id === selectedBusId) || null;
   // Find driver for selectedBus
   const selectedDriver = selectedBus && selectedBus.driverId ? drivers.find(d => d.id === selectedBus.driverId) : null;
 
@@ -203,7 +203,7 @@ const BusTrackingDashboard: React.FC = () => {
                       {busesForSelectedRoute.map(bus => {
                         const driver = drivers.find(d => d.id === bus.driverId);
                         return (
-                          <option key={bus.id} value={bus.busNumber}>
+                          <option key={bus.id} value={bus.id}>
                             {bus.busNumber} | {bus.status?.toUpperCase() || '-'}
                             {driver ? ` | Driver: ${driver.firstName} ${driver.lastName}` : ''}
                             {typeof bus.currentOccupancy === 'number' && typeof bus.capacity === 'number' ? ` | ${bus.currentOccupancy}/${bus.capacity}` : ''}
@@ -249,7 +249,8 @@ const BusTrackingDashboard: React.FC = () => {
               <div className="block md:hidden w-full flex justify-center mb-4">
                 <EtaCard
                   eta={etaCardData.eta}
-                  busNumber={selectedBus?.busNumber || selectedBusId}
+                  busNumber={selectedBus?.busNumber || ''}
+                  busId={selectedBus?.id || selectedBusId}
                   nextStop={etaCardData.upcomingStop}
                   location={etaCardData.busAddress}
                   status={(() => {
@@ -283,7 +284,7 @@ const BusTrackingDashboard: React.FC = () => {
                     {/* Desktop Map */}
                     <div className="hidden md:block h-full w-full">
                       <LiveBusMap 
-                        busId={selectedBus?.busNumber || selectedBusId}
+                        busId={selectedBus?.id || selectedBusId}
                         route={selectedRoute || undefined}
                         bus={selectedBus || undefined}
                       />
@@ -291,7 +292,7 @@ const BusTrackingDashboard: React.FC = () => {
                     {/* Mobile Map */}
                     <div className="block md:hidden h-full w-full">
                       <MobileBusMap 
-                        busId={selectedBus?.busNumber || selectedBusId}
+                        busId={selectedBus?.id || selectedBusId}
                         route={selectedRoute || undefined}
                         bus={selectedBus || undefined}
                         defaultZoom={12}

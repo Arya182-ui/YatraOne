@@ -87,7 +87,6 @@ def analytics():
             "utilization": float(d.get('utilization', 0)),
             "totalTrips": int(d.get('totalTrips', 0)),
         })
-
     # Popular Routes (top 5 by ridership)
     # Assume each bus doc has 'routeId', 'routeName', 'ridership', 'growth'
     route_map = {}
