@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../services/session_service.dart';
+import '../services/location_service.dart';
+
 
 class SosScreen extends StatefulWidget {
   const SosScreen({super.key});
@@ -16,11 +20,19 @@ class _SosScreenState extends State<SosScreen> {
   Future<void> _sendSOS() async {
     setState(() => _loading = true);
     try {
+      final userId = await SessionService.getUserId();
+      final position = await LocationService.getCurrentLocation();
       final response = await http.post(
-        Uri.parse('https://your-backend-url/api/sos'),
-        body: {'description': _descController.text},
+        Uri.parse('https://yatraone-backend.onrender.com/api/sos'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'message': _descController.text,
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        }),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         setState(() {
           _response = 'SOS sent successfully!';
         });
@@ -40,15 +52,20 @@ class _SosScreenState extends State<SosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('SOS/Emergency')),
+      appBar: AppBar(
+        title: Text('SOS/Emergency', style: Theme.of(context).textTheme.headlineMedium),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
                 child: Column(
@@ -57,28 +74,30 @@ class _SosScreenState extends State<SosScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.warning, size: 40, color: Colors.red),
-                        const SizedBox(width: 12),
+                        Icon(Icons.warning_amber_rounded, size: 48, color: colorScheme.error, semanticLabel: 'SOS Icon'),
+                        const SizedBox(width: 16),
                         Text('Emergency SOS', style: Theme.of(context).textTheme.titleLarge),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    const Text('Describe your emergency:'),
+                    const SizedBox(height: 28),
+                    Text('Describe your emergency:', style: Theme.of(context).textTheme.bodyLarge),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _descController,
                       maxLines: 3,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Type details here...',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.edit),
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.edit_outlined),
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
                       ),
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.warning, color: Colors.white),
+                      child: FilledButton.icon(
+                        icon: Icon(Icons.warning_amber_rounded, color: colorScheme.onError),
                         label: _loading
                             ? const SizedBox(
                                 width: 20,
@@ -87,17 +106,33 @@ class _SosScreenState extends State<SosScreen> {
                               )
                             : const Text('Send SOS'),
                         onPressed: _loading ? null : _sendSOS,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          textStyle: const TextStyle(fontSize: 16),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colorScheme.error,
+                          foregroundColor: colorScheme.onError,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          textStyle: Theme.of(context).textTheme.titleMedium,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ),
                     ),
-                    if (_response != null) ...[
-                      const SizedBox(height: 20),
-                      Text(_response!, style: TextStyle(color: _response == 'SOS sent successfully!' ? Colors.green : Colors.red)),
-                    ],
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: _response != null
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 20),
+                              child: Text(
+                                _response!,
+                                key: ValueKey(_response),
+                                style: TextStyle(
+                                  color: _response == 'SOS sent successfully!'
+                                      ? Colors.green
+                                      : colorScheme.error,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   ],
                 ),
               ),

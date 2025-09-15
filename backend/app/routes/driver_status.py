@@ -8,7 +8,7 @@ class DriverStatusUpdate(BaseModel):
     user_id: str
     online: bool
 
-@router.post('/drivers/status')
+@router.post('/status')
 def update_driver_status(data: DriverStatusUpdate):
     """
     Update the online/offline status of a driver.

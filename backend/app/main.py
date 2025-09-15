@@ -34,7 +34,7 @@ from app.routes import (
     notifications,
 )
 from app.routes import sms_webhook
-from app.routes import driver_status, timetable, driver_auth, bus_locations_realtime_update
+from app.routes import driver_status, timetable,bus_locations_realtime_update
 from app.routes.otp import start_cleanup_task
 from app.firebase import firestore_db, realtime_db
 from app.routes import bus_location_ws
@@ -137,7 +137,6 @@ if os.getenv("ENV", "development") == "production":
  # Routers
  # ---------------------------------------------------------------------
 app.include_router(timetable.router, prefix="/api", tags=["timetable"])
-app.include_router(driver_auth.router, prefix="/api", tags=["driver"])
 app.include_router(sos_admin.router, prefix="/api", tags=["sos-admin"])
 app.include_router(reverse_geocode.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])

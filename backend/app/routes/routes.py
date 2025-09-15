@@ -1,7 +1,35 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional
+
 import math
+import requests
+# --------------------------
+# Geocoding Helper (OpenStreetMap Nominatim)
+# --------------------------
+def geocode_address(address):
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        "q": address,
+        "format": "json",
+        "limit": 1
+    }
+    try:
+        response = requests.get(url, params=params, headers={"User-Agent": "YatraOne/1.0"}, timeout=5)
+        data = response.json()
+        if data:
+            return float(data[0]["lat"]), float(data[0]["lon"])
+    except Exception:
+        pass
+    return None, None
+
+# For stops: list of names -> list of dicts with lat/lon
+def geocode_stops(stop_names):
+    stops = []
+    for name in stop_names:
+        lat, lon = geocode_address(name)
+        stops.append({"name": name, "latitude": lat, "longitude": lon})
+    return stops
 
 from app.firebase import firestore_db  # Firestore client
 
@@ -49,20 +77,33 @@ def get_routes():
 # POST create new route
 # --------------------------
 @router.post("/routes")
+
 def add_route(route: Route):
     # Check if route_name already exists
     existing = firestore_db.collection('routes').where("route_name", "==", route.route_name).stream()
     if any(existing):
         raise HTTPException(status_code=400, detail=f"Route name '{route.route_name}' already exists")
 
+    route_data = route.dict()
+
+    # Geocode start/end if missing or zero
+    if (not route_data.get('start_latitude') or not route_data.get('start_longitude')) and route_data.get('start_location_name'):
+        lat, lon = geocode_address(route_data['start_location_name'])
+        route_data['start_latitude'], route_data['start_longitude'] = lat, lon
+    if (not route_data.get('end_latitude') or not route_data.get('end_longitude')) and route_data.get('end_location_name'):
+        lat, lon = geocode_address(route_data['end_location_name'])
+        route_data['end_latitude'], route_data['end_longitude'] = lat, lon
+
+    # Geocode stops if provided as names (list of str)
+    stops = route_data.get('stops')
+    if stops and isinstance(stops, list) and (isinstance(stops[0], str) or stops == []):
+        route_data['stops'] = geocode_stops(stops)
+
     # Calculate distance
     total_distance = haversine(
-        route.start_latitude, route.start_longitude,
-        route.end_latitude, route.end_longitude
+        route_data['start_latitude'], route_data['start_longitude'],
+        route_data['end_latitude'], route_data['end_longitude']
     )
-
-
-    route_data = route.dict()
     route_data['total_distance_km'] = total_distance
 
     try:

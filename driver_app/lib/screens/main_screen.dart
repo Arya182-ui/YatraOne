@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/location_service.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
+import '../services/driver_location_ws_service.dart';
 import 'dart:async';
 
 import '../services/session_service.dart';
@@ -9,6 +10,7 @@ import '../services/session_service.dart';
   await SessionService.clearSession();
     Navigator.pushReplacementNamed(context, '/login');
   }
+
 
 
 
@@ -21,12 +23,17 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-
 class _MainScreenState extends State<MainScreen> {
+  String? _currentBusId;
   bool _updating = false;
   bool _online = false;
   StreamSubscription<Position>? _locationSubscription;
   String? _status;
+  DriverLocationWebSocketService? _wsService;
+  // String? _currentBusId; // removed unused field
+  String? _currentDriverId;
+  List<Map<String, dynamic>> _pendingLocations = [];
+  bool _wsConnected = false;
 
   Future<void> _sendLocation() async {
     if (!_online) {
@@ -36,79 +43,136 @@ class _MainScreenState extends State<MainScreen> {
     if (!mounted) return;
     setState(() { _status = 'Updating location...'; });
     try {
-      final pos = await LocationService.getCurrentLocation();
+      final pos = await LocationService.getCurrentLocation().timeout(const Duration(seconds: 10), onTimeout: () => throw Exception('Location timeout'));
       final userId = widget.userId;
       if (userId == null || userId.isEmpty) {
         setState(() { _status = 'User ID missing.'; });
         return;
       }
-      final assignedBus = await ApiService.getAssignedBusForUser(userId);
+      final assignedBus = await ApiService.getAssignedBusForUser(userId).timeout(const Duration(seconds: 10), onTimeout: () => null);
       if (assignedBus == null) {
-        setState(() { _status = 'No bus assigned.'; });
+        setState(() { _status = 'No bus assigned or request timed out.'; });
         return;
       }
       final busId = assignedBus['id'];
-      final token = await SessionService.getToken();
-      // Always send speed (required by backend)
-      await ApiService.updateLocation(
-        busId: busId,
-        latitude: pos.latitude,
-        longitude: pos.longitude,
-        speed: pos.speed, // speed in m/s from Geolocator
-        timestamp: DateTime.now().toIso8601String(),
-        token: token,
-      );
+      _currentBusId = busId;
+      _currentDriverId = userId;
+      final data = {
+        'latitude': pos.latitude,
+        'longitude': pos.longitude,
+        'speed': pos.speed,
+        'driver_id': userId,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      if (_wsService != null && _wsConnected) {
+        _wsService!.sendLocation(
+          latitude: pos.latitude,
+          longitude: pos.longitude,
+          speed: pos.speed,
+          driverId: userId,
+          timestamp: data['timestamp'] as String?,
+        );
+        setState(() { _status = 'Location sent (ws)!'; });
+      } else {
+        _pendingLocations.add(data);
+        setState(() { _status = 'No connection. Location buffered.'; });
+      }
+    } on TimeoutException catch (_) {
       if (!mounted) return;
-      setState(() { _status = 'Location sent!'; });
+      setState(() { _status = 'Error: Operation timed out. Please check your network or GPS.'; });
     } catch (e) {
       if (!mounted) return;
       setState(() { _status = 'Error: $e'; });
     }
   }
 
-  void _startUpdates() {
+  void _startUpdates() async {
     if (!_online) {
       setState(() { _status = 'You are offline. Go online to start updates.'; });
       return;
     }
     if (_updating) return;
     setState(() { _updating = true; _status = 'Started auto updates.'; });
-    _locationSubscription = LocationService.getLocationStream(distanceFilterMeters: 10)
-        .listen((pos) async {
-      final userId = widget.userId;
-      if (userId == null || userId.isEmpty) {
-        setState(() { _status = 'User ID missing.'; });
-        return;
-      }
-      final assignedBus = await ApiService.getAssignedBusForUser(userId);
+    final userId = widget.userId;
+    if (userId == null || userId.isEmpty) {
+      setState(() { _status = 'User ID missing.'; });
+      return;
+    }
+    try {
+      final assignedBus = await ApiService.getAssignedBusForUser(userId).timeout(const Duration(seconds: 10), onTimeout: () => null);
       if (assignedBus == null) {
-        setState(() { _status = 'No bus assigned.'; });
+        setState(() { _status = 'No bus assigned or request timed out.'; });
         return;
       }
       final busId = assignedBus['id'];
-      final token = await SessionService.getToken();
-      await ApiService.updateLocation(
-        busId: busId,
-        latitude: pos.latitude,
-        longitude: pos.longitude,
-        speed: pos.speed,
-        timestamp: DateTime.now().toIso8601String(),
-        token: token,
-      );
-      if (!mounted) return;
-      setState(() { _status = 'Location sent (auto)!'; });
-    },
-    onError: (e) {
-      if (!mounted) return;
-      setState(() { _status = 'Location stream error: $e'; });
-    });
+      _currentBusId = busId;
+      _currentDriverId = userId;
+      _wsService = DriverLocationWebSocketService();
+      _wsService!.connect(busId, onConnected: () {
+        setState(() { _wsConnected = true; _status = 'WebSocket connected.'; });
+        // Send any buffered locations
+        for (final data in _pendingLocations) {
+          _wsService!.sendLocation(
+            latitude: data['latitude'],
+            longitude: data['longitude'],
+            speed: data['speed'],
+            driverId: data['driver_id'],
+            timestamp: data['timestamp'] as String?,
+          );
+        }
+        _pendingLocations.clear();
+      }, onError: (e) {
+        setState(() { _wsConnected = false; _status = 'WebSocket error: $e'; });
+      });
+      _locationSubscription = LocationService.getLocationStream(distanceFilterMeters: 10)
+          .listen((pos) async {
+        final data = {
+          'latitude': pos.latitude,
+          'longitude': pos.longitude,
+          'speed': pos.speed,
+          'driver_id': _currentDriverId,
+          'timestamp': DateTime.now().toIso8601String(),
+        };
+        if (_wsService != null && _wsConnected) {
+          _wsService!.sendLocation(
+            latitude: pos.latitude,
+            longitude: pos.longitude,
+            speed: pos.speed,
+            driverId: _currentDriverId ?? '',
+            timestamp: data['timestamp'] as String?,
+          );
+          setState(() { _status = 'Location sent (ws, auto)!'; });
+        } else {
+          _pendingLocations.add(data);
+          setState(() { _status = 'No connection. Location buffered.'; });
+        }
+      },
+      onError: (e) {
+        if (!mounted) return;
+        setState(() { _status = 'Location stream error: $e'; });
+      });
+    } on TimeoutException catch (_) {
+      setState(() { _status = 'Error: Operation timed out. Please check your network.'; });
+    } catch (e) {
+      setState(() { _status = 'Error: $e'; });
+    }
   }
 
   void _stopUpdates() {
     setState(() { _updating = false; _status = 'Stopped auto updates.'; });
     _locationSubscription?.cancel();
     _locationSubscription = null;
+    _wsService?.disconnect();
+    _wsService = null;
+    _wsConnected = false;
+    _currentBusId = null;
+    _currentDriverId = null;
+    _pendingLocations.clear();
   }
+
+  // (removed duplicate _toggleOnline)
+
+  // (removed duplicate dispose)
 
   Future<void> _toggleOnline(bool value) async {
     final userId = widget.userId;
@@ -136,36 +200,48 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Driver Dashboard')),
+      appBar: AppBar(
+        title: Text('Driver Dashboard', style: Theme.of(context).textTheme.headlineMedium),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(Icons.dashboard, size: 48, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(height: 16),
-                    Text('Welcome to your Dashboard', style: Theme.of(context).textTheme.headlineMedium),
-                    const SizedBox(height: 16),
+                    Icon(Icons.dashboard, size: 56, color: Theme.of(context).colorScheme.primary, semanticLabel: 'Dashboard Icon'),
+                    const SizedBox(height: 20),
+                    Text('Welcome to your Dashboard', style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Switch(
+                        Switch.adaptive(
                           value: _online,
                           onChanged: (val) => _toggleOnline(val),
-                          activeThumbColor: Colors.green,
+                          activeColor: Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(width: 8),
-                        Text(_online ? 'Online' : 'Offline', style: TextStyle(color: _online ? Colors.green : Colors.red, fontWeight: FontWeight.bold)),
+                        Text(
+                          _online ? 'Online' : 'Offline',
+                          style: TextStyle(
+                            color: _online ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -186,7 +262,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -207,7 +283,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -233,23 +309,37 @@ class _MainScreenState extends State<MainScreen> {
                       icon: Icon(_updating ? Icons.pause : Icons.play_arrow),
                       label: Text(_updating ? 'Stop Auto Updates' : 'Start Auto Updates'),
                       onPressed: !_online ? null : (_updating ? _stopUpdates : _startUpdates),
-                      style: Theme.of(context).elevatedButtonTheme.style,
+                      style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
+                        minimumSize: WidgetStateProperty.all(const Size.fromHeight(48)),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.location_on),
                       label: const Text('Manual Location Update'),
                       onPressed: !_online ? null : _sendLocation,
-                      style: Theme.of(context).elevatedButtonTheme.style,
+                      style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
+                        minimumSize: WidgetStateProperty.all(const Size.fromHeight(48)),
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    if (_status != null) Text(_status!, style: Theme.of(context).textTheme.bodyLarge),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: _status != null
+                          ? Text(_status!, key: ValueKey(_status), style: Theme.of(context).textTheme.bodyLarge)
+                          : const SizedBox.shrink(),
+                    ),
                     const SizedBox(height: 32),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.logout),
                       label: const Text('Logout'),
                       onPressed: () => _logout(context),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
                     ),
                   ],
                 ),
@@ -270,23 +360,26 @@ class _QuickAccessButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: 90,
-        height: 90,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 32, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 8),
-            Text(label, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-          ],
+    return Material(
+      color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 90,
+          height: 90,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 32, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(height: 8),
+              Text(label, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
         ),
       ),
     );

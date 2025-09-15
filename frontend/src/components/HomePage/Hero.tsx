@@ -14,12 +14,18 @@ import { Link } from "react-router-dom";
 import { timetableAPI } from '../../lib/api';
 import HeroNav from "./publicnav"
 
+// Images for slider section
+import bus1 from '../../assets/image1.jpg';
+import bus2 from '../../assets/image2.jpeg';
+import bus3 from '../../assets/image3.jpg';
+import bus4 from '../../assets/image4.jpg';
+
 // Dummy images for slider
 const sliderImages = [
-  "/bus1.jpg",
-  "/bus2.jpg",
-  "/bus3.jpg",
-  "/bus4.jpg",
+  bus1,
+  bus2,
+  bus3,
+  bus4,
 ];
 
 interface ExperienceJourneySliderProps {

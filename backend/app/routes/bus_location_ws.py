@@ -1,5 +1,9 @@
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from typing import Dict, List
+import json
+from app.firebase import realtime_db
+from datetime import datetime
 
 router = APIRouter()
 
@@ -26,11 +30,41 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+
 @router.websocket("/ws/bus-location/{bus_id}")
 async def bus_location_ws(websocket: WebSocket, bus_id: str):
     await manager.connect(bus_id, websocket)
+    print(f"[WS] Connected: bus_id={bus_id}")
     try:
         while True:
-            await websocket.receive_text()  # Keeps the connection alive
+            msg = await websocket.receive_text()
+            print(f"[WS] Received from {bus_id}: {msg}")
+            try:
+                data = json.loads(msg)
+                # Validate required fields
+                lat = data.get('latitude')
+                lon = data.get('longitude')
+                speed = data.get('speed')
+                driver_id = data.get('driver_id')
+                timestamp = data.get('timestamp') or datetime.utcnow().isoformat()
+                if lat is None or lon is None or speed is None or driver_id is None:
+                    print(f"[WS] Invalid data from {bus_id}: {data}")
+                    continue  # skip invalid
+                # Update Firebase Realtime DB
+                loc_data = {
+                    'latitude': lat,
+                    'longitude': lon,
+                    'driver_id': driver_id,
+                    'speed': speed,
+                    'timestamp': timestamp,
+                }
+                print(f"[WS] Updating Firebase for {bus_id}: {loc_data}")
+                realtime_db.child('bus_locations').child(bus_id).set(loc_data)
+                # Broadcast to all clients
+                await manager.broadcast(bus_id, loc_data)
+            except Exception as e:
+                print(f"[WS] Error processing message for {bus_id}: {e}")
+                continue
     except WebSocketDisconnect:
+        print(f"[WS] Disconnected: bus_id={bus_id}")
         manager.disconnect(bus_id, websocket)

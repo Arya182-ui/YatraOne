@@ -92,12 +92,48 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
     fetchDriver();
   }, [bus]);
   const { t } = useTranslation();
-  const wsUrlBase = import.meta.env.VITE_BACKEND_WS_URL || 'http://localhost:8000';
+  const useLocal = false; // true = local, false = Render
+  const localIp = '192.168.1.5'; // Change to your PC's IP
+  const localPort = 8000;
+  const localWsUrl = `ws://${localIp}:${localPort}`;
+  const renderWsUrl = 'wss://yatraone-backend.onrender.com/api';
+  const wsUrlBase = useLocal ? localWsUrl : renderWsUrl;
   const [wsFailed, setWsFailed] = React.useState(false);
   const [fallbackLocation, setFallbackLocation] = React.useState<any>(null);
+  console.log('[LiveBusMap] wsUrlBase:', wsUrlBase, 'busId:', busId);
   const location = useBusLocationWebSocket(busId, wsUrlBase, {
     onError: () => setWsFailed(true)
   });
+
+  // --- Offline cache logic ---
+  const CACHE_KEY = `livebusmap_last_location_${busId}`;
+  // Save to cache whenever location updates (and online)
+  React.useEffect(() => {
+    if (navigator.onLine && location && location.latitude && location.longitude) {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(location));
+    }
+  }, [location]);
+
+  // If offline, load from cache
+  const [offlineLocation, setOfflineLocation] = React.useState<any>(null);
+  React.useEffect(() => {
+    function handleOffline() {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) setOfflineLocation(JSON.parse(cached));
+      } catch {}
+    }
+    function handleOnline() {
+      setOfflineLocation(null);
+    }
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    if (!navigator.onLine) handleOffline();
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [busId]);
   const [busAddress, setBusAddress] = React.useState<string>("");
   const [busStatus, setBusStatus] = React.useState<string>("");
   const [upcomingStop, setUpcomingStop] = React.useState<string>("");
@@ -222,10 +258,11 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
     }
   }, [location, fallbackLocation]);
 
-  // Calculate map center: prefer bus location, else fallback, else route start, else default
+  // Calculate map center: prefer bus location, else fallback, else offline, else route start, else default
   let mapCenter: [number, number] = DEFAULT_CENTER_LIVE;
   if (location) mapCenter = [location.latitude, location.longitude];
   else if (fallbackLocation) mapCenter = [fallbackLocation.latitude, fallbackLocation.longitude];
+  else if (offlineLocation) mapCenter = [offlineLocation.latitude, offlineLocation.longitude];
   else if (route) mapCenter = [route.start_latitude, route.start_longitude];
 
   // Polyline for route
@@ -274,12 +311,12 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
             </Marker>
           )}
           {/* Bus marker logic: only show if not reached destination or not before start */}
-          {(location || fallbackLocation) && busStatus !== 'reached_destination' && busStatus !== 'not_started' && (
-            <Marker position={location ? [location.latitude, location.longitude] : [fallbackLocation.latitude, fallbackLocation.longitude]} icon={liveBusIcon}>
+          {(location || fallbackLocation || offlineLocation) && busStatus !== 'reached_destination' && busStatus !== 'not_started' && (
+            <Marker position={location ? [location.latitude, location.longitude] : fallbackLocation ? [fallbackLocation.latitude, fallbackLocation.longitude] : [offlineLocation.latitude, offlineLocation.longitude]} icon={liveBusIcon}>
               <Popup>
                 <div style={{ minWidth: 200 }}>
                   <div className="font-bold text-blue-700 text-lg mb-1">{t('livebusmap.bus', 'Bus')} {bus?.number || busId}</div>
-                  <div className="text-xs text-gray-500 mb-2">{t('livebusmap.last_update', 'Last update')}: {location?.timestamp ? new Date(location.timestamp).toLocaleTimeString() : t('livebusmap.na', 'N/A')}</div>
+                  <div className="text-xs text-gray-500 mb-2">{t('livebusmap.last_update', 'Last update')}: {location?.timestamp ? new Date(location.timestamp).toLocaleTimeString() : offlineLocation?.timestamp ? new Date(offlineLocation.timestamp).toLocaleTimeString() : t('livebusmap.na', 'N/A')}</div>
                   <div className="mb-2">
                     <b>{t('livebusmap.route', 'Route')}:</b> {route?.route_name || bus?.route || '-'}
                   </div>
@@ -291,9 +328,12 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
                       <div><b>{t('livebusmap.amenities', 'Amenities')}:</b> {(bus.amenities || []).join(', ')}</div>
                     </>
                   )}
-                  <div className="mt-2 text-xs text-gray-400">Lat: {location ? location.latitude : fallbackLocation.latitude}, Lng: {location ? location.longitude : fallbackLocation.longitude}</div>
+                  <div className="mt-2 text-xs text-gray-400">Lat: {location ? location.latitude : fallbackLocation ? fallbackLocation.latitude : offlineLocation.latitude}, Lng: {location ? location.longitude : fallbackLocation ? fallbackLocation.longitude : offlineLocation.longitude}</div>
                   {wsFailed && fallbackLocation && (
                     <div className="text-red-500 font-semibold mt-2">{t('livebusmap.driver_not_sharing', 'Driver is not started sharing location yet')}</div>
+                  )}
+                  {!location && !fallbackLocation && offlineLocation && (
+                    <div className="text-yellow-600 font-semibold mt-2">{t('livebusmap.offline_cache', 'Offline: Showing last known location')}</div>
                   )}
                 </div>
               </Popup>
@@ -373,7 +413,7 @@ const LiveBusMap: React.FC<LiveBusMapProps> = ({ busId, route, bus }) => {
                 <svg xmlns='http://www.w3.org/2000/svg' className='w-4 h-4 text-indigo-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 11c0-1.104.896-2 2-2s2 .896 2 2-.896 2-2 2-2-.896-2-2z'/></svg>
                 Tracking
               </span>
-              <span className="text-base font-semibold text-gray-800 text-center">{busAddress || '-'}</span>
+              <span className="text-base font-semibold text-gray-800 text-center">{typeof busAddress === 'string' ? busAddress : '-'}</span>
             </div>
           </div>
         </div>

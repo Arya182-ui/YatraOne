@@ -50,7 +50,7 @@ def get_eta_and_next_stop_for_bus(bus_number: str):
     import requests
     try:
         url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={bus_lat}&lon={bus_lon}&accept-language=en"
-        headers = {"User-Agent": "YatraOne/1.0 (contact@yatraone.com)"}
+        headers = {"User-Agent": "YatraOne/1.0 (arya119000@gmail.com)"}
         resp = requests.get(url, headers=headers, timeout=5)
         resp.raise_for_status()
         data = resp.json()
@@ -64,5 +64,4 @@ def get_eta_and_next_stop_for_bus(bus_number: str):
         "eta": eta,
         "next_stop": next_stop_name
     }
-from app.firebase import firestore_db
-import math
+

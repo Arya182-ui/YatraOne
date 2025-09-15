@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.driver_app"
+    namespace = "com.example.YatraOne"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.driver_app"
+        applicationId = "com.example.YatraOne"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -41,5 +41,5 @@ flutter {
 
 dependencies {
     // ✅ Required for desugaring
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

@@ -325,9 +325,6 @@ export const authAPI = {
     localStorage.removeItem('user');
   },
 
-  /**
-   * Refresh JWT access token using refresh token cookie.
-   */
   refreshToken: refreshAccessToken,
 };
 

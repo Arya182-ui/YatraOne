@@ -22,7 +22,7 @@ class _PerformanceScreenState extends State<PerformanceScreen> {
 
   Future<void> _fetchPerformanceData() async {
     try {
-      final response = await http.get(Uri.parse('https://your-backend-url/api/driver/performance'));
+      final response = await http.get(Uri.parse('https://yatraone-backend.onrender.com/api/driver/performance'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
@@ -45,48 +45,57 @@ class _PerformanceScreenState extends State<PerformanceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Driver Performance')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Center(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.bar_chart, size: 40, color: Theme.of(context).colorScheme.primary),
-                              const SizedBox(width: 12),
-                              Text('Performance Dashboard', style: Theme.of(context).textTheme.titleLarge),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          ..._performanceData.entries.map((entry) => Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                child: ListTile(
-                                  leading: const Icon(Icons.check_circle_outline),
-                                  title: Text(entry.key),
-                                  trailing: Text(entry.value.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  tileColor: Colors.grey[100],
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                              )),
-                        ],
+      appBar: AppBar(
+        title: Text('Driver Performance', style: Theme.of(context).textTheme.headlineMedium),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : Center(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.bar_chart_rounded, size: 48, color: colorScheme.primary, semanticLabel: 'Performance Icon'),
+                                const SizedBox(width: 16),
+                                Text('Performance Dashboard', style: Theme.of(context).textTheme.titleLarge),
+                              ],
+                            ),
+                            const SizedBox(height: 28),
+                            ..._performanceData.entries.map((entry) => Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: ListTile(
+                                    leading: Icon(Icons.check_circle_outline_rounded, color: colorScheme.secondary),
+                                    title: Text(entry.key, style: Theme.of(context).textTheme.bodyLarge),
+                                    trailing: Text(entry.value.toString(), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                                    tileColor: colorScheme.surfaceVariant,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  ),
+                                )),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }

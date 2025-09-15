@@ -6,15 +6,20 @@ class HelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Help & Support')),
+      appBar: AppBar(
+        title: Text('Help & Support', style: Theme.of(context).textTheme.headlineMedium),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
                 child: Column(
@@ -23,41 +28,41 @@ class HelpScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.help_outline, size: 40, color: Theme.of(context).colorScheme.primary),
-                        const SizedBox(width: 12),
+                        Icon(Icons.help_outline_rounded, size: 48, color: colorScheme.primary, semanticLabel: 'Help Icon'),
+                        const SizedBox(width: 16),
                         Text('Help & Support', style: Theme.of(context).textTheme.titleLarge),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    const Text('Frequently Asked Questions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 28),
+                    Text('Frequently Asked Questions', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
                     const ExpansionTile(
-                      leading: Icon(Icons.report, color: Colors.blue),
+                      leading: Icon(Icons.report_outlined, color: Colors.blue),
                       title: Text('How do I report an incident?'),
                       children: [Padding(padding: EdgeInsets.all(8.0), child: Text('Go to the Incident screen and fill out the form.'))],
                     ),
                     const ExpansionTile(
-                      leading: Icon(Icons.warning, color: Colors.red),
+                      leading: Icon(Icons.warning_amber_rounded, color: Colors.red),
                       title: Text('How do I send an SOS?'),
                       children: [Padding(padding: EdgeInsets.all(8.0), child: Text('Go to the SOS screen and press the Send SOS button.'))],
                     ),
                     const ExpansionTile(
-                      leading: Icon(Icons.notifications, color: Colors.orange),
+                      leading: Icon(Icons.notifications_active_rounded, color: Colors.orange),
                       title: Text('How do I view notifications?'),
                       children: [Padding(padding: EdgeInsets.all(8.0), child: Text('Notifications are available in the Notification Center.'))],
                     ),
-                    const SizedBox(height: 20),
-                    const Text('Contact Support', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 24),
+                    Text('Contact Support', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
                     ListTile(
-                      leading: const Icon(Icons.email),
-                      title: const Text('Email: support@yatraone.com'),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      tileColor: Colors.grey[100],
+                      leading: const Icon(Icons.email_outlined),
+                      title: const Text('Email: arya119000@gmail.com'),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      tileColor: colorScheme.surfaceVariant,
                       onTap: () async {
                         final Uri emailUri = Uri(
                           scheme: 'mailto',
-                          path: 'support@yatraone.com',
+                          path: 'arya119000@gmail.com',
                         );
                         if (await canLaunchUrl(emailUri)) {
                           await launchUrl(emailUri);
@@ -69,14 +74,14 @@ class HelpScreen extends StatelessWidget {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.phone),
-                      title: const Text('Phone: +91-1234567890'),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      tileColor: Colors.grey[100],
+                      leading: const Icon(Icons.phone_outlined),
+                      title: const Text('Phone: 9258728706'),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      tileColor: colorScheme.surfaceVariant,
                       onTap: () async {
                         final Uri phoneUri = Uri(
                           scheme: 'tel',
-                          path: '+911234567890',
+                          path: '9258728706',
                         );
                         if (await canLaunchUrl(phoneUri)) {
                           await launchUrl(phoneUri);
@@ -87,15 +92,15 @@ class HelpScreen extends StatelessWidget {
                         }
                       },
                     ),
-                    const SizedBox(height: 20),
-                    const Text('Troubleshooting', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 24),
+                    Text('Troubleshooting', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
                     ListTile(
-                      leading: const Icon(Icons.info_outline),
+                      leading: const Icon(Icons.info_outline_rounded),
                       title: const Text('If you face issues, try restarting the app or check your internet connection.'),
                       subtitle: const Text('For persistent problems, contact support.'),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      tileColor: Colors.grey[100],
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      tileColor: colorScheme.surfaceVariant,
                     ),
                   ],
                 ),

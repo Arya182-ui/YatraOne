@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class AuthService extends ChangeNotifier {
-  static const String baseUrl = 'https://yatraone.onrender.com';
+  static const String baseUrl = 'https://yatraone-backend.onrender.com/api';
 
   static Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(

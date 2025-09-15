@@ -184,7 +184,7 @@ def send_otp(data: SendOtpRequest, background_tasks: BackgroundTasks):
 
         # Send async email
         name = data.email.split("@")[0]
-        background_tasks.add_task(send_otp_email, data.email, name, otp, data.purpose)
+        background_tasks.add_task(send_otp_email, data.email, name, otp)
 
         return {"success": True, "message": "OTP sent to email", "timestamp": now}
     except Exception as e:

@@ -11,6 +11,39 @@ const roleOptions = [
 ];
 
 const AdminUsers: React.FC = () => {
+  // Add User modal state
+  const [addModal, setAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    phone: '',
+    role: 'user',
+  });
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState('');
+  const handleAddChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setAddForm(f => ({ ...f, [name]: value }));
+  };
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddLoading(true);
+    setAddError('');
+    try {
+      // Send all required fields
+      const res = await api.post('/users', addForm);
+      setUsers(users => [...users, res.data]);
+      setAddModal(false);
+      setAddForm({ firstName: '', lastName: '', email: '', password: '', phone: '', role: 'user' });
+    } catch (err: any) {
+      setAddError(err?.response?.data?.detail || 'Failed to add user.');
+    } finally {
+      setAddLoading(false);
+    }
+  };
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -127,6 +160,40 @@ const AdminUsers: React.FC = () => {
         </div>
       )}
       <div className="max-w-6xl mx-auto">
+        {/* Add User Button */}
+        <div className="flex justify-end mb-6">
+          <button
+            className="px-5 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold shadow hover:scale-105 transition-transform"
+            onClick={() => setAddModal(true)}
+          >+ Add User</button>
+        </div>
+        {/* Add User Modal */}
+        {addModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 max-w-md w-full border border-blue-200 dark:border-gray-700 relative animate-fadeIn">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">Add New User</h2>
+              <form onSubmit={handleAddUser} className="flex flex-col gap-4">
+                <input name="firstName" value={addForm.firstName} onChange={handleAddChange} placeholder="First Name" className="input-modern" required />
+                <input name="lastName" value={addForm.lastName} onChange={handleAddChange} placeholder="Last Name" className="input-modern" required />
+                <input name="email" value={addForm.email} onChange={handleAddChange} placeholder="Email" className="input-modern" type="email" required />
+                <input name="password" value={addForm.password} onChange={handleAddChange} placeholder="Password" className="input-modern" type="password" required />
+                <input name="phone" value={addForm.phone} onChange={handleAddChange} placeholder="Phone" className="input-modern" required />
+                <select name="role" value={addForm.role} onChange={handleAddChange} className="input-modern" required>
+                  {roleOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                {addError && <div className="text-red-500 text-sm text-center">{addError}</div>}
+                <div className="flex gap-4 mt-2 justify-center">
+                  <button type="submit" className="px-5 py-2 rounded-lg bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold shadow hover:scale-105 transition-transform" disabled={addLoading}>
+                    {addLoading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : 'Add User'}
+                  </button>
+                  <button type="button" className="px-5 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold shadow hover:scale-105 transition-transform" onClick={() => setAddModal(false)} disabled={addLoading}>Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
         <h1 className="text-4xl font-extrabold mb-10 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-green-500 to-teal-400 tracking-tight drop-shadow-lg">User Management</h1>
         {loading ? (
           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-lg font-semibold"><Loader2 className="w-6 h-6 animate-spin" /> Loading users...</div>
