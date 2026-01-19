@@ -15,6 +15,19 @@
 
 ---
 
+---
+
+<div align="center">
+  <p><strong>🔒 Archived on 19 January 2026</strong></p>
+  <p>
+    This project is no longer under active development.<br>
+    The repository remains available for reference and reuse.<br>
+    For questions or collaboration, please contact the maintainer.
+  </p>
+</div>
+
+---
+
 
 ## 🚍 Project Overview
 A modern, secure, and scalable public transport management platform. Features include:
